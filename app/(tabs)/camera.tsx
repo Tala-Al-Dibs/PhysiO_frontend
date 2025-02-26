@@ -1,12 +1,15 @@
-import PhotoPreviewSection from '@/components/PhotoPreviewSection';
+import PhotoPreviewSection from '@/components/camera/PhotoPreviewSection';
 import ScanIcon from '@/components/svgIcons/camera/ScanIcon';
-import { AntDesign, Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { AntDesign, Feather, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
 import { useRef, useState, useEffect } from 'react';
-import { Animated, Button, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Button, Easing, StyleSheet, Text, TouchableOpacity, View , Image} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as MediaLibrary from 'expo-media-library';
+import { BlurView } from 'expo-blur';
+
 
 export default function Camera() {
   const [facing, setFacing] = useState<CameraType>('back');
@@ -19,11 +22,13 @@ export default function Camera() {
   const [fadeAnim] = useState(new Animated.Value(1)); // Opacity animation
   const [scaleAnim] = useState(new Animated.Value(1)); // Scale animation
   const insets = useSafeAreaInsets();
+  const [lastImage, setLastImage] = useState<string | null>(null);
 
   if (!permission) {
     // Camera permissions are still loading.
     return <View />;
   }
+  
 
   if (!permission.granted) {
     return (
@@ -122,23 +127,22 @@ export default function Camera() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.upperButtons}>
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Feather name="x" size={44} color="#0CA7BD" />
-      </TouchableOpacity>
+      <View style={styles.upperBlurWrapper}>
+  <BlurView intensity={30} tint="dark" style={styles.upperBlur}>
+    <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+      <Feather name="x" size={40} color="#0CA7BD" />
+    </TouchableOpacity>
 
-      {/* Timer Button (Top Right) */}
-      <TouchableOpacity 
-        style={styles.timerButton} 
-        onPress={() => setIsTimerActive(prev => !prev)}
-      >
-        <MaterialIcons 
-          name="timer" 
-          size={44} 
-          color={isTimerActive ? "#0CA7BD" : "white"} 
-        />
-      </TouchableOpacity>
-      </View>
+    <TouchableOpacity style={styles.timerButton} onPress={() => setIsTimerActive(prev => !prev)}>
+      <MaterialCommunityIcons 
+        name="timer-outline" 
+        size={40} 
+        color={isTimerActive ? "#0CA7BD" : "white"} 
+      />
+    </TouchableOpacity>
+  </BlurView>
+</View>
+
       <CameraView style={styles.camera} facing={facing} ref={cameraRef}>
       {countdown !== null && (
           <Animated.View style={[styles.countdownContainer, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
@@ -146,17 +150,19 @@ export default function Camera() {
         </Animated.View>
         )}
         
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
-            <MaterialIcons name="flip-camera-android" size={44} color="#0CA7BD" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.button} onPress={handleTakePhoto}>
-            <ScanIcon />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.button} onPress={pickImage}>
-            <Feather name="image" size={44} color="#0CA7BD" />
-          </TouchableOpacity>
-        </View>
+        <View style={styles.buttonContainerWrapper}>
+  <BlurView intensity={30} tint="dark" style={styles.buttonContainer}>
+    <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
+      <MaterialIcons name="flip-camera-android" size={40} color="#0CA7BD" />
+    </TouchableOpacity>
+    <TouchableOpacity style={styles.cameraButton} onPress={handleTakePhoto}>
+      <ScanIcon />
+    </TouchableOpacity>
+    <TouchableOpacity style={styles.button} onPress={pickImage}>
+      <Feather name="image" size={40} color="#0CA7BD" />
+    </TouchableOpacity>
+  </BlurView>
+</View>
       </CameraView>
     </View>
   );
@@ -169,61 +175,87 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 40, // Adjust according to your layout
+    top: 50, // Adjust according to your layout
     left: 40,
     zIndex: 10, // Ensure it's above other elements
     // backgroundColor: 'rgba(12, 167, 189, 0.5)', // Optional: Adds some background to make it visible
     borderRadius: 50,
     padding: 0,
+    alignSelf: 'flex-end',
+  },
+  timerButton: {
+    position: 'absolute',
+    top: 50,
+    right: 40, // Position it on the right side
+    zIndex: 10,
+    // backgroundColor: 'rgba(12, 167, 189, 0)',
+    borderRadius: 50,
+    padding: 0,
+    alignSelf: 'flex-end',
   },
   camera: {
     flex: 1,
   },
-  buttonContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    backgroundColor: 'transparent',
-    marginBottom: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  // upperButtons: {
-  //   flex: 1,
-  //   flexDirection: 'row',
-  // },
-  upperButtons: {
+  buttonContainerWrapper: {
     position: 'absolute',
-    top: 10,
+    bottom: 0,
     left: 0,
     right: 0,
+    alignItems: 'center',
+  },
+  
+  buttonContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0, 0, 0, 0.1)', // Dark semi-transparent
+    borderRadius: 20,
+    // padding: 20,
+    // marginBottom: 20,
+    paddingBottom: 50,
+    paddingTop: 20,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  upperBlurWrapper: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 100, // Adjust height to cover the area
+    zIndex: 10,
+  },
+  
+  upperBlur: {
+    flex: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    zIndex: 10,
-    backgroundColor: 'transparent', // This ensures there's no unwanted background
-  },
+    paddingHorizontal: 20,
+    paddingTop: 40, // Adjust padding for Safe Area
+    height: '100%',
+    backgroundColor: 'rgba(0, 0, 0, 0.1)', // Optional, to ensure better visibility
+  },  
   button: {
     flex: 1,
     alignSelf: 'flex-end',
     alignItems: 'center',
-    marginHorizontal: 10,
-    borderRadius: 10,
-    marginBottom: 30,
+    marginHorizontal: 5,
+    paddingHorizontal: 10,
+    padding: 10,
+    borderRadius: 50,
+    marginBottom: 20,
+    // backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  cameraButton: {
+    flex: 1,
+    alignSelf: 'flex-end',
+    alignItems: 'center',
+    
   },
   text: {
     fontSize: 24,
     fontWeight: 'bold',
     color: 'white',
-  },
-  timerButton: {
-    position: 'absolute',
-    top: 40,
-    right: 40, // Position it on the right side
-    zIndex: 10,
-    // backgroundColor: 'rgba(12, 167, 189, 0)',
-    borderRadius: 50,
-    padding: 10,
   },
   countdownContainer: {
     position: 'absolute',
