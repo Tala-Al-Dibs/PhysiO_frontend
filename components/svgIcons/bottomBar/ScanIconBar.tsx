@@ -1,7 +1,7 @@
 import * as React from "react";
 import Svg, { G, Path, Defs, LinearGradient, Stop } from "react-native-svg";
 
-const ScanIcon = ({ color = "black" }) => {
+const ScanIconBar = ({ color = "black" }) => {
   return (
     <Svg
     width={84}
@@ -70,4 +70,4 @@ const ScanIcon = ({ color = "black" }) => {
   )
 }
 
-export default ScanIcon
+export default ScanIconBar
