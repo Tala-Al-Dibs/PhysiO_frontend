@@ -7,7 +7,7 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import "D:/A Graduation Project/cam-app/global.css"
+// import "D:/A Graduation Project/cam-app/global.css"
 import { AntDesign } from '@expo/vector-icons';
 import HomeIcon from '@/components/svgIcons/bottomBar/HomeIcon';
 import ExploreIcon from '@/components/svgIcons/bottomBar/ExploreIcon';

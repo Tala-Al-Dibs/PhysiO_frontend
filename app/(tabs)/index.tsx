@@ -4,7 +4,7 @@ import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import "D:/A Graduation Project/cam-app/global.css"
+// import "D:/A Graduation Project/cam-app/global.css"
 
 export default function HomeScreen() {
   return (
