@@ -2,11 +2,16 @@ import { Image, StyleSheet, Platform, Text, View, TouchableOpacity } from 'react
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from "react-native-responsive-screen";
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
+import { Calendar } from "react-native-calendars";
+import ProgressRing from '@/components/progress/ProgressRing';
+// import PieChart from "react-native-pie-chart";
 // import "D:/A Graduation Project/cam-app/global.css"
 
 export default function HomeScreen() {
   const [username, setUsername] = useState('Tala Al Dibs');
   const [selected, setSelected] = useState("Month");
+  const today = new Date();
+  const todayStr = today.toISOString().split("T")[0];
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -32,6 +37,42 @@ export default function HomeScreen() {
       return <Text style={styles.contentText}>Month: {today.toLocaleString('default', { month: 'long' })}</Text>;
     }
   };
+
+  const generateMarkedDates = () => {
+    let markedDates: { [key: string]: any } = {};
+
+    for (let i = 1; i <= 31; i++) {
+      let date = new Date(today.getFullYear(), today.getMonth(), i);
+      let dateString = date.toISOString().split("T")[0];
+
+      if (date > today) {
+        // Upcoming days: Black text
+        markedDates[dateString] = { textColor: "black" };
+      } else if (date.toDateString() === today.toDateString()) {
+        // Today's date: Red circle
+        markedDates[dateString] = {
+          selected: true,
+          selectedColor: "#0CA7BD",
+        };
+      } else if (date < today && date.getDay() !== 0 && date.getMonth()===today.getMonth()) {
+        // Past Saturdays: Green
+        markedDates[dateString] = { selected: true, selectedColor: "#CEEDF2" };
+      } else {
+        // Other past days: Blue
+        markedDates[dateString] = { marked: true, dotColor: "blue" };
+      }
+    }
+
+    return markedDates;
+  };
+
+  const widthAndHeight = 120;
+  const series = [
+    { value: 50, color: "#003f5c" }, // Sad
+    { value: 75, color: "#7aabd4" }, // Neutral
+    { value: 80, color: "#ffd700" }, // Happy
+  ];
+  const sliceColor = ["#003f5c", "#7aabd4", "#ffd700"];
 
   return (
     <View style={{paddingTop: hp(8), paddingHorizontal: wp(5)}} className="flex-1 gap-1">
@@ -64,9 +105,42 @@ export default function HomeScreen() {
           </TouchableOpacity>
         ))}
       </View>
-
+      
+      <View style={styles.container}>
+        
+      {/* <PieChart
+        widthAndHeight={widthAndHeight}
+        series={series}
+        // sliceColor={sliceColor}
+        // coverRadius={0.6} // Creates a donut effect
+        // coverFill={"#FFF"}
+        cover={0.45}
+      /> */}
+      {/* <Text style={styles.label}>Emotion Analysis</Text> */}
+    </View>
       {/* Content Below Slider */}
-      <View style={styles.contentContainer}>{getContent()}</View>
+      <View style={styles.contentContainer}>
+        {selected === "Day" && <View>
+          <Text style={styles.contentText}>Today is {today.toDateString()}</Text>
+          <ProgressRing/>
+          </View>}
+        {selected === "Week" && <Text style={styles.contentText}>Week 1</Text>}
+        {selected === "Month" && (
+          <Calendar
+          current={todayStr}
+          markedDates={generateMarkedDates()}
+          theme={{
+            todayTextColor: "#0CA7BD",
+            arrowColor: "#0CA7BD",
+            calendarBackground: "transparent", // Makes the background transparent
+            dayTextColor: "#333", // General text color
+            textDisabledColor: "#A9A9A9", // Disabled dates
+          }}
+          style={{ backgroundColor: "transparent",  width: wp(90), // Adjust width to 90% of screen width
+            height: hp(60), }} // Ensures transparency
+        />
+        )}
+      </View>
     </View>
     </View>
     
@@ -118,6 +192,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "#333",
+  },
+  label: {
+    marginTop: 10,
+    fontSize: 16,
+    fontWeight: "bold",
   },
 
 });
