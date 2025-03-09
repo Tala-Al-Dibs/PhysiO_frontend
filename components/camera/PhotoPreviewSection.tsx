@@ -1,13 +1,16 @@
 import { View, Text, TouchableOpacity, SafeAreaView, Image, StyleSheet, Alert } from 'react-native';
-import React from 'react';
+import React, { useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { CameraCapturedPicture } from 'expo-camera';
 import { useRouter } from 'expo-router';
+import LoadinfScreen from './LoadingScreen';
+import LoadingScreen from './LoadingScreen';
 
 const API_URL = 'http://192.168.1.117:8080/api/reports'; // Replace with your actual API base URL
+const IP = '192.168.1.117'
 const USER_ID = 1; // Replace with the dynamic user ID
 
-const TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJUZXN0VXNlciIsImlhdCI6MTc0MDg1MDM1OSwiZXhwIjoxNzQwOTM2NzU5fQ.xaqC1BmG2eoVErIbvgjY-yzBzSGSPLpMeYm9Pv15lM0"; // Replace with dynamic token
+const TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJUZXN0VXNlciIsImlhdCI6MTc0MTUyNDU4NSwiZXhwIjoxNzQxNjEwOTg1fQ.zuJpUG2kBnM6I39RXER7kOLJ3B3BXDug3KIPHqkAM4I";
 
 const PhotoPreviewSection = ({
     photo,
@@ -16,25 +19,27 @@ const PhotoPreviewSection = ({
     photo: CameraCapturedPicture;
     handleRetakePhoto: () => void;
 }) => {
+    const [loading, setLoading] = useState(false);
     const router = useRouter();
 
     const uploadImage = async () => {
+        setLoading(true);
         try {
             const formData = new FormData();
     
-            // Append the report part with Content-Type: application/json
+            // Append the report part with an empty JSON object
             formData.append("report", {
-                uri: "data:application/json;base64," + btoa(JSON.stringify({})), // Empty JSON object
-                name: 'report.json', // Name of the file
-                type: 'application/json', // MIME type of the file
-            } as any); // Cast the object to `any` to bypass TypeScript errors
+                uri: "data:application/json;base64," + btoa(JSON.stringify({})),
+                name: 'report.json',
+                type: 'application/json',
+            } as any);
     
             // Append the image file
             formData.append("image", {
-                uri: photo.uri, // Use the URI of the captured photo
-                name: 'image.jpg', // Name of the file
-                type: 'image/jpeg', // MIME type of the file
-            } as any); // Cast the object to `any` to bypass TypeScript errors
+                uri: photo.uri,
+                name: 'image.jpg',
+                type: 'image/jpeg',
+            } as any);
     
             console.log("Uploading image...");
     
@@ -43,7 +48,6 @@ const PhotoPreviewSection = ({
                 headers: {
                     "Authorization": `Bearer ${TOKEN}`,
                     "Accept": "application/json",
-                    // Do NOT set "Content-Type": "multipart/form-data" manually
                 },
                 body: formData,
             });
@@ -51,17 +55,47 @@ const PhotoPreviewSection = ({
             const responseData = await response.json();
             console.log("Upload response:", responseData);
     
-            if (response.ok) {
-                Alert.alert("Success", "Image uploaded successfully!");
-                router.push("/(camera)/ScanImage");
-            } else {
+            if (!response.ok) {
                 throw new Error(`Upload failed: ${response.status}`);
             }
+    
+            // Step 2: Get the image URL from the response
+            const imageUrl = responseData.image.url;
+            console.log("Image URL:", imageUrl);
+    
+            // Step 3: Send the image URL to the FastAPI backend
+            const problemResponse = await fetch('http://192.168.1.117:8000/detect-problems', {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ image_uri: imageUrl }),
+            });
+    
+            const problemData = await problemResponse.json();
+            console.log("Problem Detection Response:", problemData);
+    
+            if (problemResponse.ok) {
+                // Step 4: Navigate to the problem page and pass detected problems
+                router.push({
+                    pathname: "../(problem)/problem",
+                    params: { problems: JSON.stringify(problemData.problems) },
+                });
+            } else {
+                throw new Error(`Problem detection failed: ${problemResponse.status}`);
+            }
         } catch (error) {
-            console.error("Error uploading image:", error);
-            Alert.alert("Error", "Failed to upload image.");
+            console.error("Error:", error);
+            Alert.alert("Error", "Failed to upload image or detect problems.");
+        } finally {
+            setLoading(false); // ✅ Ensure loading stops
         }
     };
+    
+
+    if (loading) {
+        return <LoadingScreen photo={photo}/>;
+    }
 
     return (
         <SafeAreaView style={styles.container}>
