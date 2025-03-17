@@ -1,21 +1,29 @@
-import { Image, StyleSheet, Platform, Text, View, TouchableOpacity } from 'react-native';
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from "react-native-responsive-screen";
-import { Feather, Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import {
+  Image,
+  StyleSheet,
+  Platform,
+  Text,
+  View,
+  TouchableOpacity,
+} from "react-native";
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from "react-native-responsive-screen";
+import { Feather, Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
 import { Calendar } from "react-native-calendars";
-import ProgressRing from '@/components/progress/ProgressRing';
-// import PieChart from "react-native-pie-chart";
-// import "D:/A Graduation Project/cam-app/global.css"
+import ProgressRing from "@/components/progress/ProgressRing";
 
 export default function HomeScreen() {
-  const [username, setUsername] = useState('Tala Al Dibs');
+  const [username, setUsername] = useState("Tala Al Dibs");
   const [selected, setSelected] = useState("Month");
   const today = new Date();
   const todayStr = today.toISOString().split("T")[0];
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-  
+
     if (hour >= 5 && hour < 12) {
       return { message: "Good morning", icon: "sunny" as const }; // 🌞
     } else if (hour >= 12 && hour < 18) {
@@ -30,11 +38,17 @@ export default function HomeScreen() {
   const getContent = () => {
     const today = new Date();
     if (selected === "Day") {
-      return <Text style={styles.contentText}>Today is {today.toDateString()}</Text>;
+      return (
+        <Text style={styles.contentText}>Today is {today.toDateString()}</Text>
+      );
     } else if (selected === "Week") {
       return <Text style={styles.contentText}>Week 1</Text>;
     } else {
-      return <Text style={styles.contentText}>Month: {today.toLocaleString('default', { month: 'long' })}</Text>;
+      return (
+        <Text style={styles.contentText}>
+          Month: {today.toLocaleString("default", { month: "long" })}
+        </Text>
+      );
     }
   };
 
@@ -54,7 +68,11 @@ export default function HomeScreen() {
           selected: true,
           selectedColor: "#0CA7BD",
         };
-      } else if (date < today && date.getDay() !== 0 && date.getMonth()===today.getMonth()) {
+      } else if (
+        date < today &&
+        date.getDay() !== 0 &&
+        date.getMonth() === today.getMonth()
+      ) {
         // Past Saturdays: Green
         markedDates[dateString] = { selected: true, selectedColor: "#CEEDF2" };
       } else {
@@ -66,96 +84,126 @@ export default function HomeScreen() {
     return markedDates;
   };
 
-  const widthAndHeight = 120;
-  const series = [
-    { value: 50, color: "#003f5c" }, // Sad
-    { value: 75, color: "#7aabd4" }, // Neutral
-    { value: 80, color: "#ffd700" }, // Happy
-  ];
-  const sliceColor = ["#003f5c", "#7aabd4", "#ffd700"];
+  const handleApiRequest = async () => {
+    const apiUrl = "https://253b-84-242-56-27.ngrok-free.app/detect-problems";
+    const requestBody = {
+      image_uri:
+        "http://res.cloudinary.com/dvp4ilk19/image/upload/v1741525470/91a664bc-b4d6-43a8-a378-49c5df943373.jpg",
+    };
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("API Response:", data);
+      alert("API Request Successful! Check console for response.");
+    } catch (error) {
+      console.error("API Request Failed:", error);
+      alert("API Request Failed. Check console for details.");
+    }
+  };
 
   return (
-    <View style={{paddingTop: hp(8), paddingHorizontal: wp(5)}} className="flex-1 gap-1">
+    <View
+      style={{ paddingTop: hp(8), paddingHorizontal: wp(5) }}
+      className="flex-1 gap-1"
+    >
       <View style={styles.topContainer}>
-      <View style={styles.greetingContainer}>
-      <Text style={{ fontSize: 20, fontWeight: 'light', color: '#6C6C6C'}}>
-        {message}!
-      </Text>
-      <Ionicons name={icon} size={20} color="#FFA500" />
-      </View>
-      <Text style={{fontSize: 30, fontWeight:'medium'}}>
-        {username}
-      </Text>
+        <View style={styles.greetingContainer}>
+          <Text style={{ fontSize: 20, fontWeight: "light", color: "#6C6C6C" }}>
+            {message}!
+          </Text>
+          <Ionicons name={icon} size={20} color="#FFA500" />
+        </View>
+        <Text style={{ fontSize: 30, fontWeight: "medium" }}>{username}</Text>
       </View>
       <View style={styles.container}>
-      {/* Toggle Slider */}
-      <View style={styles.toggleContainer}>
-        {["Day", "Week", "Month"].map((option) => (
-          <TouchableOpacity
-            key={option}
-            style={[
-              styles.toggleButton,
-              selected === option && styles.selectedButton,
-            ]}
-            onPress={() => setSelected(option)}
-          >
-            <Text style={[styles.toggleText, selected === option && styles.selectedText]}>
-              {option}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        {/* Toggle Slider */}
+        <View style={styles.toggleContainer}>
+          {["Day", "Week", "Month"].map((option) => (
+            <TouchableOpacity
+              key={option}
+              style={[
+                styles.toggleButton,
+                selected === option && styles.selectedButton,
+              ]}
+              onPress={() => setSelected(option)}
+            >
+              <Text
+                style={[
+                  styles.toggleText,
+                  selected === option && styles.selectedText,
+                ]}
+              >
+                {option}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.container}>
+          {/* Content Below Slider */}
+          <View style={styles.contentContainer}>
+            {selected === "Day" && (
+              <View>
+                <Text style={styles.contentText}>
+                  Today is {today.toDateString()}
+                </Text>
+                <ProgressRing />
+              </View>
+            )}
+            {selected === "Week" && (
+              <Text style={styles.contentText}>Week 1</Text>
+            )}
+            {selected === "Month" && (
+              <Calendar
+                current={todayStr}
+                markedDates={generateMarkedDates()}
+                theme={{
+                  todayTextColor: "#0CA7BD",
+                  arrowColor: "#0CA7BD",
+                  calendarBackground: "transparent", // Makes the background transparent
+                  dayTextColor: "#333", // General text color
+                  textDisabledColor: "#A9A9A9", // Disabled dates
+                }}
+                style={{
+                  backgroundColor: "transparent",
+                  width: wp(90), // Adjust width to 90% of screen width
+                  height: hp(60),
+                }} // Ensures transparency
+              />
+            )}
+          </View>
+        </View>
       </View>
-      
-      <View style={styles.container}>
-        
-      {/* <PieChart
-        widthAndHeight={widthAndHeight}
-        series={series}
-        // sliceColor={sliceColor}
-        // coverRadius={0.6} // Creates a donut effect
-        // coverFill={"#FFF"}
-        cover={0.45}
-      /> */}
-      {/* <Text style={styles.label}>Emotion Analysis</Text> */}
+
+      {/* Add a Button to Send API Request */}
+      <TouchableOpacity style={styles.apiButton} onPress={handleApiRequest}>
+        <Text style={styles.apiButtonText}>Send API Request</Text>
+      </TouchableOpacity>
     </View>
-      {/* Content Below Slider */}
-      <View style={styles.contentContainer}>
-        {selected === "Day" && <View>
-          <Text style={styles.contentText}>Today is {today.toDateString()}</Text>
-          <ProgressRing/>
-          </View>}
-        {selected === "Week" && <Text style={styles.contentText}>Week 1</Text>}
-        {selected === "Month" && (
-          <Calendar
-          current={todayStr}
-          markedDates={generateMarkedDates()}
-          theme={{
-            todayTextColor: "#0CA7BD",
-            arrowColor: "#0CA7BD",
-            calendarBackground: "transparent", // Makes the background transparent
-            dayTextColor: "#333", // General text color
-            textDisabledColor: "#A9A9A9", // Disabled dates
-          }}
-          style={{ backgroundColor: "transparent",  width: wp(90), // Adjust width to 90% of screen width
-            height: hp(60), }} // Ensures transparency
-        />
-        )}
-      </View>
-    </View>
-    </View>
-    
   );
 }
 
 const styles = StyleSheet.create({
   greetingContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 15,
-    alignItems: 'center',
+    alignItems: "center",
   },
   topContainer: {
-    flexDirection: 'column',
-    gap: 10
+    flexDirection: "column",
+    gap: 10,
   },
   container: {
     alignItems: "center",
@@ -166,8 +214,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#D3EEF7",
     borderRadius: 50,
     padding: 5,
-    width: '100%',
-    justifyContent: 'space-between',
+    width: "100%",
+    justifyContent: "space-between",
   },
   toggleButton: {
     paddingVertical: 10,
@@ -198,5 +246,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-
+  apiButton: {
+    marginTop: 20,
+    backgroundColor: "#0CA7BD",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  apiButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
 });
