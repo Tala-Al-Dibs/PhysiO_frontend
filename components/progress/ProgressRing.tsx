@@ -1,93 +1,224 @@
-import { View, Text, useWindowDimensions, StyleSheet } from 'react-native';
-import React from 'react';
-import { ProgressChart } from 'react-native-chart-kit';
+import { View, Text, useWindowDimensions, StyleSheet } from "react-native";
+import React, { useEffect, useState } from "react";
+import { ProgressChart } from "react-native-chart-kit";
+import { SPRINGPORT8080, TOKEN, USERID } from "@/constants/apiConfig";
+import LottieView from "lottie-react-native";
+import Progress from "../annimations/Progress";
 
-const data = {
-  labels: ['Kyphosis', 'Lordosis', 'Uneven Shoulders'], // Labels for the chart
-  data: [0.4, 0.6, 0.8], // Data values
-  colors: ['#0A8697', '#FFAC33', '#0CA7BD'], // Line colors
-  backgroundColors: ['white', 'black', 'red'], // Background colors for each line
-};
+const token = TOKEN;
+const userID = USERID;
+const api_problem = SPRINGPORT8080 + "/api/problems";
+const api_progress = SPRINGPORT8080 + "/api/progresses";
+
+interface Problem {
+  problemID: number;
+  name: string;
+}
+
+interface ProgressEntry {
+  problem: { problemID: number };
+  percentag: number; // There's a typo here; ensure it's `percentage` in your API.
+}
 
 const ProgressRing = () => {
   const { width: screenWidth } = useWindowDimensions();
+  const today = new Date();
+  const [chartData, setChartData] = useState<{
+    labels: string[];
+    data: number[];
+    colors: string[];
+  }>({
+    labels: [],
+    data: [],
+    colors: [],
+  });
+
+  useEffect(() => {
+    const fetchUserProblemsAndProgress = async () => {
+      try {
+        const problemsResponse = await fetch(
+          `${api_problem}/${userID}/problems`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!problemsResponse.ok) throw new Error("Failed to fetch problems");
+
+        const problems = (await problemsResponse.json()) as Problem[];
+
+        const problemNames = problems.map((problem) => problem.name);
+        const problemIDs = problems.map((problem) => problem.problemID);
+
+        const progressResponse = await fetch(
+          `${api_progress}/${userID}/daily`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!progressResponse.ok) throw new Error("Failed to fetch progress");
+
+        const progressData = (await progressResponse.json()) as ProgressEntry[];
+
+        const progressMap: Record<number, number> = {};
+        progressData.forEach((entry) => {
+          progressMap[entry.problem.problemID] = entry.percentag / 5; // Normalize percentage
+        });
+
+        const progressValues = problemIDs.map((id) => progressMap[id] || 0);
+
+        setChartData({
+          labels: problemNames as string[],
+          data: progressValues as number[],
+          colors: [
+            "#FFD55A",
+            "#0A8697",
+            "#FFAC33",
+            "#0CA7BD",
+            "#FFD55A",
+            "#0A8697",
+            "#FFAC33",
+            "#0CA7BD",
+            "#FFD55A",
+            "#0A8697",
+            "#FFAC33",
+            "#0CA7BD",
+          ],
+        });
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchUserProblemsAndProgress();
+  }, [userID, token]);
 
   return (
     <View style={styles.container}>
+      {/* {chartData.labels.length === 0 ? ( */}
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>
+          Scan your posture to start your progress
+        </Text>
+        <Progress size={10} />
+      </View>
       {/* Chart Container */}
-      <View style={styles.chartContainer}>
-        <ProgressChart
-          data={data}
-          width={screenWidth * 0.6} // Use 60% of the screen width for the chart
-          height={220}
-          strokeWidth={16}
-          radius={32}
-          chartConfig={{
-            backgroundColor: '#f2f2f2', // Background color of the chart
-            backgroundGradientFrom: '#f2f2f2', // Gradient start color
-            backgroundGradientTo: '#f2f2f2', // Gradient end color
-            color: (opacity) => `rgba(255, 255, 255, ${opacity})`, // Line color
-            propsForLabels: {
-              fill: 'transparent', // Hide default labels
-            },
-          }}
-          hideLegend={true} // Hide the default legend
-          withCustomBarColorFromData
-        />
-      </View>
-
       {/* Custom Legend */}
-      <View style={styles.legendContainer}>
-        {data.labels.map((label, index) => (
-          <View key={index} style={styles.legendItem}>
-            <View
-              style={[
-                styles.legendColor,
-                { backgroundColor: data.colors[index] }, // Set color for the legend dot
-              ]}
+      {/* ) : (
+        <>
+          **
+          <View style={styles.chartContainer}>
+            <ProgressChart
+              data={chartData}
+              width={screenWidth * 0.6} // Use 60% of the screen width for the chart
+              height={220}
+              strokeWidth={16}
+              radius={24}
+              chartConfig={{
+                backgroundColor: "#f2f2f2",
+                backgroundGradientFrom: "#f2f2f2",
+                backgroundGradientTo: "#f2f2f2",
+                color: (opacity) => `rgba(255, 255, 255, ${opacity})`,
+                propsForLabels: {
+                  fill: "transparent",
+                },
+              }}
+              hideLegend={true}
+              withCustomBarColorFromData
             />
-            <Text style={styles.legendText}>{label}</Text>
           </View>
-        ))}
-      </View>
+
+          **
+          <View
+            style={[
+              styles.legendContainer,
+              { gap: 50, justifyContent: "center" },
+            ]}
+          >
+            <Text
+              style={{ color: "#064D57", fontSize: 18, fontWeight: "bold" }}
+            >
+              {today.toDateString()}
+            </Text>
+            <View style={styles.legendContainer}>
+              {chartData.labels.map((label, index) => (
+                <View key={index} style={styles.legendItem}>
+                  <View
+                    style={[
+                      styles.legendColor,
+                      {
+                        backgroundColor: [
+                          "#FFD55A",
+                          "#0A8697",
+                          "#FFAC33",
+                          "#0CA7BD",
+                        ][index % 4],
+                      },
+                    ]}
+                  />
+                  <Text style={styles.legendText}>{label}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        </>
+      )} */}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    // flex: 1,
-    flexDirection: 'row', // Arrange chart and legend side by side
-    alignItems: 'center', // Center items vertically
-    justifyContent: 'space-between', // Add space between chart and legend
-    // paddingHorizontal: 20, // Add horizontal padding
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    height: 220,
+  },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#064D57",
+    textAlign: "center",
   },
   chartContainer: {
-    width: '60%', // Use 60% of the container width for the chart
+    width: "60%",
     height: 220,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   legendContainer: {
-    width: '40%', // Use 35% of the container width for the legend
-    flexDirection: 'column', // Arrange legend items vertically
-    justifyContent: 'center', // Center items vertically
+    flexDirection: "column",
+    justifyContent: "center",
   },
   legendItem: {
-    flexDirection: 'row', // Arrange color dot and label horizontally
-    alignItems: 'center', // Align items vertically
-    marginBottom: 10, // Add space between legend items
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
   },
   legendColor: {
-    width: 10, // Size of the color dot
-    height: 10, // Size of the color dot
-    borderRadius: 5, // Make the dot circular
-    marginRight: 5, // Add space between the dot and the label
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 5,
   },
   legendText: {
-    fontSize: 12, // Adjust font size
-    fontWeight: 'bold', // Adjust font weight
-    flexShrink: 1, // Allow text to wrap
+    fontSize: 12,
+    fontWeight: "bold",
+    flexShrink: 1,
   },
 });
 

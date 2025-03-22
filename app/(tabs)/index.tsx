@@ -84,35 +84,6 @@ export default function HomeScreen() {
     return markedDates;
   };
 
-  const handleApiRequest = async () => {
-    const apiUrl = "https://253b-84-242-56-27.ngrok-free.app/detect-problems";
-    const requestBody = {
-      image_uri:
-        "http://res.cloudinary.com/dvp4ilk19/image/upload/v1741525470/91a664bc-b4d6-43a8-a378-49c5df943373.jpg",
-    };
-
-    try {
-      const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log("API Response:", data);
-      alert("API Request Successful! Check console for response.");
-    } catch (error) {
-      console.error("API Request Failed:", error);
-      alert("API Request Failed. Check console for details.");
-    }
-  };
-
   return (
     <View
       style={{ paddingTop: hp(8), paddingHorizontal: wp(5) }}
@@ -186,11 +157,6 @@ export default function HomeScreen() {
           </View>
         </View>
       </View>
-
-      {/* Add a Button to Send API Request */}
-      <TouchableOpacity style={styles.apiButton} onPress={handleApiRequest}>
-        <Text style={styles.apiButtonText}>Send API Request</Text>
-      </TouchableOpacity>
     </View>
   );
 }

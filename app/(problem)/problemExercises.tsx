@@ -172,7 +172,7 @@ export default function ProblemExercise() {
 
   // Calculate total exercise duration
   const exerciseDuration = getExerciseDuration(progressSize);
-  const totalDurationSum = exercises.length * exerciseDuration + 20;
+  const totalDurationSum = exercises.length * exerciseDuration + 40;
 
   if (loading) {
     return (
