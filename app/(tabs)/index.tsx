@@ -126,11 +126,11 @@ export default function HomeScreen() {
           {/* Content Below Slider */}
           <View style={styles.contentContainer}>
             {selected === "Day" && (
-              <View>
+              <View style={{ left: 15 }}>
                 <Text style={styles.contentText}>
                   Today is {today.toDateString()}
                 </Text>
-                <ProgressRing />
+                <ProgressRing type={"home"} />
               </View>
             )}
             {selected === "Week" && (
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   contentText: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333",
+    color: "transparent",
   },
   label: {
     marginTop: 10,

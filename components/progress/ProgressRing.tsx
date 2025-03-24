@@ -1,9 +1,18 @@
-import { View, Text, useWindowDimensions, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  useWindowDimensions,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  ImageBackground,
+} from "react-native";
 import React, { useEffect, useState } from "react";
 import { ProgressChart } from "react-native-chart-kit";
 import { SPRINGPORT8080, TOKEN, USERID } from "@/constants/apiConfig";
-import LottieView from "lottie-react-native";
-import Progress from "../annimations/Progress";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { ProblemColors } from "@/constants/Colors";
+import { useRouter } from "expo-router";
 
 const token = TOKEN;
 const userID = USERID;
@@ -20,9 +29,11 @@ interface ProgressEntry {
   percentag: number; // There's a typo here; ensure it's `percentage` in your API.
 }
 
-const ProgressRing = () => {
+const ProgressRing = ({ type }: any) => {
   const { width: screenWidth } = useWindowDimensions();
   const today = new Date();
+  const router = useRouter();
+  const problemColors = ProblemColors;
   const [chartData, setChartData] = useState<{
     labels: string[];
     data: number[];
@@ -33,11 +44,23 @@ const ProgressRing = () => {
     colors: [],
   });
 
+  // Function to convert hex color to RGBA with opacity
+  const hexToRgba = (hex: string, opacity: number) => {
+    // Remove the '#' if it's there
+    hex = hex.replace("#", "");
+    // Convert hex to RGB
+    let r = parseInt(hex.substring(0, 2), 16);
+    let g = parseInt(hex.substring(2, 4), 16);
+    let b = parseInt(hex.substring(4, 6), 16);
+    // Return RGBA color
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  };
+
   useEffect(() => {
     const fetchUserProblemsAndProgress = async () => {
       try {
         const problemsResponse = await fetch(
-          `${api_problem}/${userID}/problems`,
+          `${api_problem}/user/${userID}/problems`,
           {
             method: "GET",
             headers: {
@@ -76,23 +99,14 @@ const ProgressRing = () => {
 
         const progressValues = problemIDs.map((id) => progressMap[id] || 0);
 
+        const problemColorsArray = problemNames.map(
+          (name) => problemColors[name] || "#000000" // Default to black if not found
+        );
+
         setChartData({
           labels: problemNames as string[],
           data: progressValues as number[],
-          colors: [
-            "#FFD55A",
-            "#0A8697",
-            "#FFAC33",
-            "#0CA7BD",
-            "#FFD55A",
-            "#0A8697",
-            "#FFAC33",
-            "#0CA7BD",
-            "#FFD55A",
-            "#0A8697",
-            "#FFAC33",
-            "#0CA7BD",
-          ],
+          colors: problemColorsArray,
         });
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -104,18 +118,21 @@ const ProgressRing = () => {
 
   return (
     <View style={styles.container}>
-      {/* {chartData.labels.length === 0 ? ( */}
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>
-          Scan your posture to start your progress
-        </Text>
-        <Progress size={10} />
-      </View>
-      {/* Chart Container */}
-      {/* Custom Legend */}
-      {/* ) : (
+      {/* chartData.labels.length === 0 */}
+      {chartData.labels.length === 0 ? (
+        <View style={[styles.emptyContainer, { left: 15 }]}>
+          <Text style={styles.emptyText}>
+            Scan your posture to start your progress
+          </Text>
+          <Image
+            source={require("../../assets/images/Progress-Photoroom.png")}
+            style={{ height: 200, aspectRatio: 1 }}
+            resizeMode="contain"
+          />
+        </View>
+      ) : (
         <>
-          **
+          {/* Chart Container */}
           <View style={styles.chartContainer}>
             <ProgressChart
               data={chartData}
@@ -124,10 +141,16 @@ const ProgressRing = () => {
               strokeWidth={16}
               radius={24}
               chartConfig={{
-                backgroundColor: "#f2f2f2",
-                backgroundGradientFrom: "#f2f2f2",
-                backgroundGradientTo: "#f2f2f2",
-                color: (opacity) => `rgba(255, 255, 255, ${opacity})`,
+                backgroundColor: "#ffffff",
+                backgroundGradientFrom: "#ffffff",
+                backgroundGradientTo: "#ffffff",
+                color: (opacity, index = 0) => {
+                  // Use the index to get the corresponding color from the colors array
+                  const color =
+                    chartData.colors[index % chartData.colors.length];
+                  // Convert the hex color to RGBA with the given opacity
+                  return hexToRgba(color, opacity);
+                },
                 propsForLabels: {
                   fill: "transparent",
                 },
@@ -137,18 +160,48 @@ const ProgressRing = () => {
             />
           </View>
 
-          **
+          {/* Custom Legend */}
           <View
             style={[
               styles.legendContainer,
-              { gap: 50, justifyContent: "center" },
+              { gap: 20, justifyContent: "center" },
             ]}
           >
-            <Text
-              style={{ color: "#064D57", fontSize: 18, fontWeight: "bold" }}
-            >
-              {today.toDateString()}
-            </Text>
+            {type === "progress" ? (
+              <View style={{ height: 36 }}>
+                <Text
+                  style={{ color: "#064D57", fontSize: 18, fontWeight: "bold" }}
+                >
+                  {today.toDateString()}
+                </Text>
+              </View>
+            ) : (
+              <ImageBackground
+                source={require("../../assets/images/progressButtonBackgroundGradient.png")}
+                style={styles.backgroundImage}
+                resizeMode="cover" // Adjust the resizeMode as needed
+              >
+                <TouchableOpacity
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 9,
+                    paddingHorizontal: 8,
+                    width: 152,
+                    height: 36,
+                    borderRadius: 10,
+                  }}
+                  onPress={() => router.push("./progress")}
+                >
+                  <MaterialCommunityIcons
+                    name="chart-donut-variant"
+                    size={18}
+                    color="white"
+                  />
+                  <Text style={{ color: "white" }}>Detailed Insight</Text>
+                </TouchableOpacity>
+              </ImageBackground>
+            )}
             <View style={styles.legendContainer}>
               {chartData.labels.map((label, index) => (
                 <View key={index} style={styles.legendItem}>
@@ -156,12 +209,7 @@ const ProgressRing = () => {
                     style={[
                       styles.legendColor,
                       {
-                        backgroundColor: [
-                          "#FFD55A",
-                          "#0A8697",
-                          "#FFAC33",
-                          "#0CA7BD",
-                        ][index % 4],
+                        backgroundColor: chartData.colors[index] || "#000000",
                       },
                     ]}
                   />
@@ -171,7 +219,7 @@ const ProgressRing = () => {
             </View>
           </View>
         </>
-      )} */}
+      )}
     </View>
   );
 };
@@ -186,10 +234,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    height: 220,
+  },
+  backgroundImage: {
+    borderRadius: 10, // Match the borderRadius of the button
+    overflow: "hidden", // Ensure the borderRadius is applied to the background
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#064D57",
     textAlign: "center",
