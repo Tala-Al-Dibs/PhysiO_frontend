@@ -1,7 +1,15 @@
-import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  TouchableOpacity,
+} from "react-native";
 import React, { useEffect, useState } from "react";
 import { SPRINGPORT8080, TOKEN, USERID } from "@/constants/apiConfig";
 import IconComponent from "../svgIcons/problems/ProblemsIconsWithColor";
+import { ProblemColors } from "@/constants/Colors";
+import { useRouter } from "expo-router";
 
 interface Problem {
   problemID: number;
@@ -21,6 +29,7 @@ const IndividualProblemProgress = () => {
   const [userProblems, setUserProblems] = useState<Problem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const token = TOKEN;
   const userID = USERID;
@@ -88,10 +97,13 @@ const IndividualProblemProgress = () => {
       const progress = progressData.find(
         (p) => p.problem.problemID === problem.problemID
       );
+      const problemColor = ProblemColors[problem.name] || "#0CA7BD"; // Default color if not found
+
       return {
         problem: problem.name,
         percentage: progress ? (progress.percentag / 5) * 100 : 0,
-        icon: problem.name, // Pass problem name to IconComponent
+        color: problemColor, // Add the problem-specific color
+        icon: problem.name,
       };
     });
   };
@@ -115,13 +127,26 @@ const IndividualProblemProgress = () => {
   return (
     <View style={styles.container}>
       {getCombinedProgress().map((item, index) => (
-        <View key={index} style={styles.card}>
+        <TouchableOpacity
+          key={index}
+          style={styles.card}
+          onPress={() =>
+            router.push({
+              pathname: "/problemProgress",
+              params: {
+                problem: item.problem,
+                problemID: userProblems.find((p) => p.name === item.problem)
+                  ?.problemID,
+              },
+            })
+          }
+        >
           <View style={styles.iconContainer}>
             <IconComponent problem={item.problem} />
           </View>
           <View style={styles.textContainer}>
             <Text style={styles.problemText}>{item.problem}</Text>
-            <Text style={styles.exerciseText}>Exercises</Text>
+            <Text style={styles.exerciseText}>Progress</Text>
           </View>
           <View style={styles.percentageContainer}>
             <Text style={styles.percentageText}>
@@ -129,11 +154,17 @@ const IndividualProblemProgress = () => {
             </Text>
             <View style={styles.progressBar}>
               <View
-                style={[styles.progressFill, { width: `${item.percentage}%` }]}
+                style={[
+                  styles.progressFill,
+                  {
+                    width: `${item.percentage}%`,
+                    backgroundColor: item.color, // Use the problem-specific color
+                  },
+                ]}
               />
             </View>
           </View>
-        </View>
+        </TouchableOpacity>
       ))}
     </View>
   );
@@ -197,7 +228,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#FFAC33",
+    // backgroundColor: "#FFAC33",
     borderRadius: 3,
   },
   loadingContainer: {

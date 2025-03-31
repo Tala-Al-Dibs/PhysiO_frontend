@@ -307,7 +307,10 @@ export default function Problem() {
           </View>
           <Text style={styles.description}>{problemData.description}</Text>
 
-          <View style={styles.PhysiotherapContainer}>
+          <TouchableOpacity
+            style={styles.PhysiotherapContainer}
+            onPress={() => route.push("./(physiotherapist)/physiotherapistsN")}
+          >
             <View style={styles.PhysiotherapContainerIcon}>
               <PhysiotherapistIcon />
               <Text style={styles.PhysiotherapText}>Find Physiotherapist</Text>
@@ -318,7 +321,7 @@ export default function Problem() {
               color="rgba(12, 167, 189, 0.59)"
               //   style={styles.arrowIcon}
             />
-          </View>
+          </TouchableOpacity>
           <Text
             style={{
               paddingTop: 15,
