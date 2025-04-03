@@ -1,3 +1,4 @@
+
 import {
   Image,
   StyleSheet,
@@ -26,6 +27,7 @@ interface User {
   username: string;
   password: string;
 }
+
 
 export default function HomeScreen() {
   const [username, setUsername] = useState("");

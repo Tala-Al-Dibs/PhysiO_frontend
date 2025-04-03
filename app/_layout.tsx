@@ -34,6 +34,7 @@ export default function RootLayout() {
   }
 
   return (
+
     <ThemeProvider value={colorScheme === "light" ? DarkTheme : DefaultTheme}>
       <Stack>
         {hasSeenIntro ? (
