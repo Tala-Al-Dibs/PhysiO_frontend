@@ -35,7 +35,6 @@ const SearchBar: React.FC<SearchBarProps> = ({
         </TouchableOpacity>
       )}
 
-      {/* Wrapper to keep search icon inside the input */}
       <View style={styles.searchBarWrapper}>
         <Feather
           name="search"
@@ -81,14 +80,14 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   searchIcon: {
-    marginLeft: 10, // Keep the icon inside
+    marginLeft: 10,
   },
   searchBar: {
     flex: 1,
     height: 50,
     fontSize: 16,
     color: "#333",
-    paddingLeft: 10, // Adjusted padding
+    paddingLeft: 10,
     borderRadius: 25,
     textAlign: "left",
   },

@@ -60,7 +60,7 @@ const DetailsContainer = ({ physiotherapist }: DetailsContainerProps) => {
           <View>
             <Text style={styles.detailLabel}>Price</Text>
             <Text style={styles.detailValue}>
-              ${physiotherapist.price || "N/A"}
+              ₪{physiotherapist.price || "N/A"}
             </Text>
           </View>
         </View>

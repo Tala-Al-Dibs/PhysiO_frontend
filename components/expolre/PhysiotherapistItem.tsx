@@ -9,33 +9,6 @@ interface PhysiotherapistItemProps {
   onPress: () => void;
 }
 
-const getLocationString = (location: string): string => {
-  switch (location) {
-    case "BETHLEHEM":
-      return "Bethlehem";
-    case "RAMALLAH":
-      return "Ramallah";
-    case "NABLUS":
-      return "Nablus";
-    case "JENIN":
-      return "Jenin";
-    case "TULKAREM":
-      return "Tulkarem";
-    case "QALQILIA":
-      return "Qalqilia";
-    case "JERICHO":
-      return "Jericho";
-    case "HEBRON":
-      return "Hebron";
-    case "GAZA":
-      return "Gaza";
-    case "JERUSALEM":
-      return "Jerusalem";
-    default:
-      return "Unknown Location";
-  }
-};
-
 const PhysiotherapistItem: React.FC<PhysiotherapistItemProps> = ({
   item,
   onPress,
@@ -47,7 +20,7 @@ const PhysiotherapistItem: React.FC<PhysiotherapistItemProps> = ({
         onPress();
         router.push({
           pathname: "/PhysiotherapistDetails",
-          params: { physiotherapistID: item.physiotherapistID.toString() }, // Ensure ID is a string
+          params: { physiotherapistID: item.physiotherapistID.toString() },
         });
       }}
     >
@@ -66,10 +39,8 @@ const PhysiotherapistItem: React.FC<PhysiotherapistItemProps> = ({
       </View>
       <View style={styles.physioInfoContainer}>
         <Text style={styles.physioName}>{item.clinicName}</Text>
-        <Text style={styles.physioLocation}>
-          {getLocationString(item.location)}
-        </Text>
-        <Text style={styles.physioPrice}>Price: ${item.price}</Text>
+        <Text style={styles.physioLocation}>{item.location}</Text>
+        <Text style={styles.physioPrice}>Price: ₪{item.price}</Text>
       </View>
     </TouchableOpacity>
   );

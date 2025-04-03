@@ -60,7 +60,6 @@ type FeatherIconName =
   | "bell"
   | "bookmark";
 
-// Mapping of problem names to Feather icons
 const problemIcons: Record<string, FeatherIconName> = {
   "Bow Legs (Genu Varum)": "alert-circle",
   "Anterior Pelvic Tilt": "activity",

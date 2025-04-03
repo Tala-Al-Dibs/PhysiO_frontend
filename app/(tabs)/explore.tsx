@@ -77,7 +77,6 @@ const explore: React.FC = () => {
     }
   };
 
-  // Fetch all problems
   const fetchAllProblems = async () => {
     try {
       const response = await fetch(`${API_URL}/problems`, {
@@ -94,7 +93,6 @@ const explore: React.FC = () => {
     }
   };
 
-  // Fetch physiotherapists
   const fetchPhysiotherapists = async () => {
     try {
       const response = await fetch(`${API_URL}/physiotherapists`, {
