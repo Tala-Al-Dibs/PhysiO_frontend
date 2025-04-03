@@ -8,6 +8,7 @@ import { Feather, FontAwesome6, MaterialCommunityIcons, Octicons } from '@expo/v
 import "../../global.css"
 import GoogleLogo from '@/components/svgIcons/signin-signup/GoogleLogo';
 import { useNavigation } from '@react-navigation/native';
+import LogoSvg from '@/components/svgIcons/logo/LogoSvg';
 
 export default function SignUp() {
     const router = useRouter();
@@ -31,7 +32,7 @@ React.useLayoutEffect(() => {
     }
   
     return (
-      <ImageBackground source={require("../../assets/images/sign up.png")} // Replace with your image path
+      <ImageBackground source={require("../../assets/images/sign in.png")} // Replace with your image path
       style={styles.background}>
       <TouchableWithoutFeedback>
         <CustomKeyboardView>
@@ -42,8 +43,14 @@ React.useLayoutEffect(() => {
             {/* <Image style={{ height: hp(35), aspectRatio: 1 }} source={require("../assets/images/login.png")} resizeMode="contain"/> */}
           </View>
           <View className="gap-10">
-          <GoogleLogo />
-            <Text style={{fontSize: hp(4)}} className="font-bold tracking-wider text-center text-neutral-800">Ya Hala!</Text>
+          <View style={{ paddingHorizontal: wp(5) }} className="flex-1 justify-start items-end pt-20">
+          <LogoSvg />
+        </View>
+
+          <View className='flex-1 gap-2 pl-2'>
+          <Text style={{fontSize: hp(5), color: '#0B96AA'}} className="font-bold tracking-wider text-start ">Ya Hala!</Text>
+          <Text style={{fontSize: hp(2), color: '#383838'}} className="font-light tracking-wider text-start ">Join us by filling the form!</Text>
+         </View>
             {/* inputs */}
             <View className="gap-4 flex-1">
             <View style={{height: hp(7)}} className="flex-row gap-4 px-4 bg-neutral-100 items-center rounded-2xl">
