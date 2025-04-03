@@ -4,8 +4,6 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Calendar } from "react-native-calendars";
 import ProgressRing from '@/components/progress/ProgressRing';
-// import PieChart from "react-native-pie-chart";
-// import "D:/A Graduation Project/cam-app/global.css"
 
 export default function HomeScreen() {
   const [username, setUsername] = useState('Tala Al Dibs');

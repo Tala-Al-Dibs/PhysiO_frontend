@@ -36,24 +36,6 @@ React.useLayoutEffect(() => {
       <TouchableWithoutFeedback>
         <CustomKeyboardView>
         <StatusBar style="dark" />
-      {/* <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 30 }}>
-        <Text>Welcome to the App!</Text>
-        <TouchableOpacity
-          onPress={() => {
-            // Navigate to the main tabs screen and update state to hide the intro
-            router.push('../(tabs)');
-          }}
-          style={{
-            backgroundColor: '#0CA7BD',
-            paddingVertical: 10,
-            paddingHorizontal: 20,
-            borderRadius: 5,
-            marginTop: 20,
-          }}
-        >
-          <Text style={{ color: 'white', fontSize: 18 }}>Enter</Text>
-        </TouchableOpacity>
-      </View> */}
       
       <View style={{paddingTop: hp(8), paddingHorizontal: wp(5)}} className="flex-1 gap-1">
           <View className="items-center">
@@ -77,19 +59,9 @@ React.useLayoutEffect(() => {
       <Feather name={passwordVisible ? "eye" : "eye-off"} size={hp(2.7  )} color="gray" />
     </TouchableOpacity>
             </View>
-            {/* <Text style={{fontSize: hp(1.8)}} className="text-right font-semibold text-neutral-500">Forgot passeord?</Text> */}
-            </View>
-            {/* submit button */}
-            
+            </View>            
   
               <View>
-                {/* {
-                  loading ? (
-                    <View className="flex-row justify-center">
-                      <Loading size={hp(13)} />
-                    </View>
-                  ) : ( 
-                     onPress={handleRegister}*/}
                   <TouchableOpacity onPress={() => {
             // Navigate to the main tabs screen and update state to hide the intro
             router.push('../(tabs)');
