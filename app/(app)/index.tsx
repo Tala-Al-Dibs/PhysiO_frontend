@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Feather, FontAwesome6, MaterialCommunityIcons, Octicons } from '@expo/vector-icons';
 import "../../global.css"
 import GoogleLogo from '@/components/svgIcons/signin-signup/GoogleLogo';
+import LogoSvg from '@/components/svgIcons/logo/LogoSvg';
 
 export default function IntroScreen() {
   const router = useRouter();
@@ -26,37 +27,26 @@ export default function IntroScreen() {
   }
 
   return (
-    <ImageBackground source={require("../../assets/images/sign in.png")} // Replace with your image path
+    <ImageBackground source={require("../../assets/images/sign up.png")} // Replace with your image path
     style={styles.background}>
     <TouchableWithoutFeedback>
       <CustomKeyboardView>
       <StatusBar style="dark" />
-    {/* <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 30 }}>
-      <Text>Welcome to the App!</Text>
-      <TouchableOpacity
-        onPress={() => {
-          // Navigate to the main tabs screen and update state to hide the intro
-          router.push('../(tabs)');
-        }}
-        style={{
-          backgroundColor: '#0CA7BD',
-          paddingVertical: 10,
-          paddingHorizontal: 20,
-          borderRadius: 5,
-          marginTop: 20,
-        }}
-      >
-        <Text style={{ color: 'white', fontSize: 18 }}>Enter</Text>
-      </TouchableOpacity>
-    </View> */}
     
     <View style={{paddingTop: hp(8), paddingHorizontal: wp(5)}} className="flex-1 gap-1">
         <View className="items-center">
           {/* <Image style={{ height: hp(35), aspectRatio: 1 }} source={require("../assets/images/login.png")} resizeMode="contain"/> */}
         </View>
         <View className="gap-10">
-        <GoogleLogo />
-          <Text style={{fontSize: hp(4)}} className="font-bold tracking-wider text-center text-neutral-800">Welcome Back!</Text>
+
+        <View style={{ paddingHorizontal: wp(5) }} className="flex-1 justify-end items-start pt-20">
+          <LogoSvg />
+        </View>
+
+          <View className='flex-1 gap-2 pl-2'>
+          <Text style={{fontSize: hp(5), color: '#0B96AA'}} className="font-bold tracking-wider text-start ">Welcome Back!</Text>
+          <Text style={{fontSize: hp(2), color: '#383838'}} className="font-light tracking-wider text-start ">We are so happy you are back!</Text>
+         </View>
           {/* inputs */}
           <View className="gap-4 flex-1">
           <View style={{height: hp(7)}} className="flex-row gap-4 px-4 bg-neutral-100 items-center rounded-2xl">
