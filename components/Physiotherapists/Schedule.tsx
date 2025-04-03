@@ -5,7 +5,7 @@ import {
   earlyClockIcon,
   lateClockIcon,
 } from "@/components/svgIcons/clocks/clocks";
-import { WorkingHours, DayOfWeek } from "@/app/types/types";
+import { WorkingHours, DayOfWeek } from "@/app/(types)/types";
 import { Feather } from "@expo/vector-icons";
 
 interface ScheduleProps {

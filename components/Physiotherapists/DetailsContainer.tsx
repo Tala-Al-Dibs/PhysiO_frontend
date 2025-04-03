@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { Feather, FontAwesome } from "@expo/vector-icons";
 import AddressLinkIcon from "@/components/svgIcons/location/AddressLinkIcon";
-import { Physiotherapist } from "@/app/types/types";
+import { Physiotherapist } from "@/app/(types)/types";
 
 interface DetailsContainerProps {
   physiotherapist: Physiotherapist;
