@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
-import { Problem } from "@/.expo/types/types";
+import { Problem } from "@/app/types/types";
 import { Feather } from "@expo/vector-icons";
 
 interface ProblemItemProps {

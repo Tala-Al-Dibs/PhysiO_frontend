@@ -15,10 +15,10 @@ import FilterDropdown from "@/components/expolre/FilterDropdown";
 import ProblemItem from "@/components/expolre/ProblemItem";
 import PhysiotherapistItem from "@/components/expolre/PhysiotherapistItem";
 import SearchBar from "@/components/expolre/SearchBar";
-import { Problem, Physiotherapist } from "@/.expo/types/types";
+import { Problem, Physiotherapist } from "@/app/types/types";
 import { router } from "expo-router";
 
-const API_URL = "http://192.168.108.180:8080/api";
+const API_URL = "http:// 192.168.1.6:8080/api";
 const BEARER_TOKEN =
   "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJub3VyMiIsImlhdCI6MTc0MzY3MDk3NiwiZXhwIjoxNzQzNzU3Mzc2fQ.zoEWR_Mq6nPVDr7Bbjf0fFfz8i3H5IJRf4pMTqDw8fY";
 
