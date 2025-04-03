@@ -1,3 +1,4 @@
+
 import {
   Image,
   StyleSheet,
@@ -28,6 +29,7 @@ export default function progress() {
   const today = new Date();
 
   return (
+
     <ProgressParallaxScrollView
       headerImage={<ProgressHeader />}
       headerBackgroundColor={{ dark: "#063E46", light: "#E0F7FA" }}
