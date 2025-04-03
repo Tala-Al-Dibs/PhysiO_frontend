@@ -1,6 +1,7 @@
 import {
   Image,
   StyleSheet,
+
   Text,
   View,
   TouchableOpacity,
@@ -11,6 +12,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+
 import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
 import ProgressRing from "@/components/progress/ProgressRing";
@@ -78,6 +80,7 @@ export default function HomeScreen() {
 
   const { message, icon } = getGreeting();
 
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -95,6 +98,7 @@ export default function HomeScreen() {
   }
 
   return (
+
     <ScrollView>
       <View
         style={{
@@ -146,6 +150,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -155,6 +160,7 @@ const styles = StyleSheet.create({
   header: {
     justifyContent: "space-between",
     flexDirection: "row",
+
     alignItems: "center",
     width: "100%",
     paddingHorizontal: 10,
