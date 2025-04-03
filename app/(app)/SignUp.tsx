@@ -25,6 +25,7 @@ React.useLayoutEffect(() => {
         Alert.alert("Sign In", "Please fill all the fields")
         return;
       } 
+      
   
       //login process
       
