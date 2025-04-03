@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { Physiotherapist } from "@/app/types/types";
+import { Physiotherapist } from "@/.expo/types/types";
 import { router } from "expo-router";
 
 interface PhysiotherapistItemProps {

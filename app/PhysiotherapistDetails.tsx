@@ -12,7 +12,7 @@ import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useNavigation } from "expo-router";
 import Schedule from "@/components/Physiotherapists/Schedule";
 import DetailsContainer from "@/components/Physiotherapists/DetailsContainer";
-import { Physiotherapist } from "@/app/types/types";
+import { Physiotherapist } from "@/.expo/types/types";
 import { LinearGradient } from "expo-linear-gradient";
 
 const API_URL = "http://192.168.108.180:8080/api";

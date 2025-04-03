@@ -15,7 +15,7 @@ import FilterDropdown from "@/components/expolre/FilterDropdown";
 import ProblemItem from "@/components/expolre/ProblemItem";
 import PhysiotherapistItem from "@/components/expolre/PhysiotherapistItem";
 import SearchBar from "@/components/expolre/SearchBar";
-import { Problem, Physiotherapist } from "@/app/types/types";
+import { Problem, Physiotherapist } from "@/.expo/types/types";
 import { router } from "expo-router";
 
 const API_URL = "http://192.168.108.180:8080/api";
