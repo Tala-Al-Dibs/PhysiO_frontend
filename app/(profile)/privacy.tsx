@@ -1,7 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Alert } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+  Alert,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRouter } from "expo-router";
+import { SPRINGPORT8080, TOKEN } from "@/constants/apiConfig";
 
 const ChangePasswordScreen = () => {
   const [previousPassword, setPreviousPassword] = useState("");
@@ -11,11 +20,11 @@ const ChangePasswordScreen = () => {
   const [confirmSecureTextEntry, setConfirmSecureTextEntry] = useState(true);
   const [previousSecureTextEntry, setPreviousSecureTextEntry] = useState(true);
   const [user, setUser] = useState<User | null>(null);
-  const API_URL = "http://192.168.121.135:8080/api/";
-  const BEARER_TOKEN ="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJUZXN0VXNlciIsImlhdCI6MTc0MjQ1OTMzNywiZXhwIjoxNzQyNTQ1NzM3fQ.g8C__IYmAf_eyDjTCbxEXlkUYnrA_ChOmw2ivHiRh1s";
+  const API_URL = SPRINGPORT8080 + "/api/";
+  const BEARER_TOKEN = TOKEN;
   const router = useRouter();
   const navigation = useNavigation();
-  
+
   React.useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
@@ -23,7 +32,7 @@ const ChangePasswordScreen = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch(`${API_URL}users/1`, { 
+        const response = await fetch(`${API_URL}users/1`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${BEARER_TOKEN}`,
@@ -44,34 +53,41 @@ const ChangePasswordScreen = () => {
 
     fetchUser();
   }, []);
-  
+
   const handleChangePassword = async () => {
     try {
-
       if (!user?.userID) {
         throw new Error("User ID is missing.");
       }
-  
+
       // Step 1: Validate previous password
-      const validateResponse = await fetch(`${API_URL}users/validate-password`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${BEARER_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId: user.userID, password: previousPassword }),
-      });
-  
+      const validateResponse = await fetch(
+        `${API_URL}users/validate-password`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${BEARER_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: user.userID,
+            password: previousPassword,
+          }),
+        }
+      );
+
       const validateData = await validateResponse.json(); // Parse JSON response
-  
+
       if (!validateResponse.ok) {
-        throw new Error(validateData.message || "Previous password is incorrect.");
+        throw new Error(
+          validateData.message || "Previous password is incorrect."
+        );
       }
-  
+
       if (newPassword !== confirmPassword) {
         throw new Error("New password and confirm password do not match.");
       }
-  
+
       // Step 3: Update password using the updateUser endpoint
       const updateResponse = await fetch(`${API_URL}users/${user.userID}`, {
         method: "PUT",
@@ -81,19 +97,19 @@ const ChangePasswordScreen = () => {
         },
         body: JSON.stringify({
           username: user.username, // Keep the username unchanged
-          password: newPassword,   // Update the password
+          password: newPassword, // Update the password
         }),
       });
-  
+
       const updateData = await updateResponse.json(); // Parse JSON response
-  
+
       if (!updateResponse.ok) {
         throw new Error(updateData.message || "Failed to update password.");
       }
-  
+
       // Success message
       Alert.alert("Success", "Your password has been updated successfully.");
-      router.push("../(tabs)/profile"); 
+      router.push("../(tabs)/profile");
     } catch (error) {
       console.error("Error:", error); // Log the full error object
       Alert.alert("Something went wrong. Please try again.");
@@ -102,7 +118,10 @@ const ChangePasswordScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Image source={require("@/assets/images/password.png")} style={styles.icon} />
+      <Image
+        source={require("@/assets/images/password.png")}
+        style={styles.icon}
+      />
       <Text style={styles.title}>SET YOUR NEW PASSWORD</Text>
       <Text style={styles.subtitle}>
         Your new password should be different from passwords previously used.
@@ -117,8 +136,14 @@ const ChangePasswordScreen = () => {
           value={previousPassword}
           onChangeText={setPreviousPassword}
         />
-        <TouchableOpacity onPress={() => setPreviousSecureTextEntry(!previousSecureTextEntry)}>
-          <Ionicons name={previousSecureTextEntry ? "eye-off" : "eye"} size={20} color="gray" />
+        <TouchableOpacity
+          onPress={() => setPreviousSecureTextEntry(!previousSecureTextEntry)}
+        >
+          <Ionicons
+            name={previousSecureTextEntry ? "eye-off" : "eye"}
+            size={20}
+            color="gray"
+          />
         </TouchableOpacity>
       </View>
 
@@ -132,7 +157,11 @@ const ChangePasswordScreen = () => {
           onChangeText={setNewPassword}
         />
         <TouchableOpacity onPress={() => setSecureTextEntry(!secureTextEntry)}>
-          <Ionicons name={secureTextEntry ? "eye-off" : "eye"} size={20} color="gray" />
+          <Ionicons
+            name={secureTextEntry ? "eye-off" : "eye"}
+            size={20}
+            color="gray"
+          />
         </TouchableOpacity>
       </View>
 
@@ -145,8 +174,14 @@ const ChangePasswordScreen = () => {
           value={confirmPassword}
           onChangeText={setConfirmPassword}
         />
-        <TouchableOpacity onPress={() => setConfirmSecureTextEntry(!confirmSecureTextEntry)}>
-          <Ionicons name={confirmSecureTextEntry ? "eye-off" : "eye"} size={20} color="gray" />
+        <TouchableOpacity
+          onPress={() => setConfirmSecureTextEntry(!confirmSecureTextEntry)}
+        >
+          <Ionicons
+            name={confirmSecureTextEntry ? "eye-off" : "eye"}
+            size={20}
+            color="gray"
+          />
         </TouchableOpacity>
       </View>
 
