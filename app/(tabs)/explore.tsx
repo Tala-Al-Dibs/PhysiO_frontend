@@ -18,9 +18,8 @@ import SearchBar from "@/components/expolre/SearchBar";
 import { Problem, Physiotherapist } from "@/app/types/types";
 import { router } from "expo-router";
 import { SPRINGPORT8080, TOKEN, USERID } from "@/constants/apiConfig";
-const API_URL = "http://192.168.1.6:8080/api";
 
-// const API_URL = SPRINGPORT8080 + "/api";
+ const API_URL = SPRINGPORT8080 + "/api";
 const BEARER_TOKEN = TOKEN;
 const DUMMY_USER_ID = USERID;
 
