@@ -9,7 +9,12 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { FASTAPIPORT8000, SPRINGPORT8080, TOKEN } from "@/constants/apiConfig";
+import {
+  FASTAPIPORT8000,
+  SPRINGPORT8080,
+  TOKEN,
+  USERID,
+} from "@/constants/apiConfig";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { useNavigation } from "@react-navigation/native";
 import { MaterialIcons, Octicons } from "@expo/vector-icons";
@@ -21,6 +26,7 @@ import {
 } from "@/components/svgIcons/problems/ProblemDescriptionIcon";
 
 const API_URL = SPRINGPORT8080 + "/api/problems/name/";
+const userID = USERID;
 
 export default function Problem() {
   const { problem } = useLocalSearchParams(); // Get problem name from URL
@@ -33,6 +39,60 @@ export default function Problem() {
   React.useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
+
+  const handleStartExercise = async () => {
+    try {
+      // Check if the user already has this problem
+      const userProblemsResponse = await fetch(
+        `${SPRINGPORT8080}/api/problems/user/${userID}/problems`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${TOKEN}`,
+            Accept: "application/json",
+          },
+        }
+      );
+
+      if (!userProblemsResponse.ok) {
+        throw new Error("Failed to fetch user's problems.");
+      }
+
+      const userProblems = await userProblemsResponse.json();
+      const problemExists = userProblems.some(
+        (p: any) => p.problemID === problemData.problemID
+      );
+
+      if (!problemExists) {
+        // Add problem to user if not already present
+        const addProblemResponse = await fetch(
+          `${SPRINGPORT8080}/api/problems/user/${userID}/add-problem/${problemData.problemID}`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${TOKEN}`,
+              Accept: "application/json",
+            },
+          }
+        );
+
+        if (!addProblemResponse.ok) {
+          throw new Error("Failed to add problem to user.");
+        }
+      }
+
+      // Navigate to problem progress page
+      route.push({
+        pathname: "./problemProgress",
+        params: {
+          problem: problemData.name,
+          problemID: problemData.problemID,
+        },
+      });
+    } catch (error) {
+      console.error("Error handling problem:", error);
+    }
+  };
 
   useEffect(() => {
     const fetchProblemDetails = async () => {
@@ -217,17 +277,10 @@ export default function Problem() {
           <View style={{ height: 65 }}></View>
         </ScrollView>
       </ParallaxScrollView>
+
       <TouchableOpacity
         style={styles.stickyButton}
-        onPress={() =>
-          route.push({
-            pathname: "./problemProgress",
-            params: {
-              problem: problemData.name,
-              problemID: problemData.problemID, // Send only the problem name
-            },
-          })
-        }
+        onPress={handleStartExercise}
       >
         <Text style={styles.buttonText}>Start Exercise</Text>
       </TouchableOpacity>

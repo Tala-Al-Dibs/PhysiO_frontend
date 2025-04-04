@@ -34,8 +34,7 @@ export default function RootLayout() {
   }
 
   return (
-
-    <ThemeProvider value={colorScheme === "light" ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <Stack>
         {hasSeenIntro ? (
           // If the user has seen the intro, show the main app screen
