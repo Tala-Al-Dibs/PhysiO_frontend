@@ -19,6 +19,7 @@ import { SPRINGPORT8080, TOKEN, USERID } from "@/constants/apiConfig";
 import PhysioHeader from "@/components/Physiotherapists/physiotherapistsHeader";
 import FilterModal from "@/components/Physiotherapists/FilterModal";
 
+
 interface Physiotherapist {
   physiotherapistID: number;
   clinicName: string;

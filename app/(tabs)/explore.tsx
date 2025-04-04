@@ -15,6 +15,7 @@ import FilterDropdown from "@/components/expolre/FilterDropdown";
 import ProblemItem from "@/components/expolre/ProblemItem";
 import PhysiotherapistItem from "@/components/expolre/PhysiotherapistItem";
 import SearchBar from "@/components/expolre/SearchBar";
+
 import { Problem, Physiotherapist } from "@/components/expolre/types/types";
 import { router, useRouter } from "expo-router";
 import { SPRINGPORT8080, TOKEN, USERID } from "@/constants/apiConfig";
@@ -23,6 +24,7 @@ const API_URL = `${SPRINGPORT8080}/api`;
 const BEARER_TOKEN = TOKEN;
 
 const DUMMY_USER_ID = USERID;
+
 const DUMMY_USER_LOCATION = "BETHLEHEM";
 
 const explore: React.FC = () => {
