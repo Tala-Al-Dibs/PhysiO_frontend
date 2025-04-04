@@ -12,12 +12,12 @@ import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useNavigation } from "expo-router";
 import Schedule from "@/components/Physiotherapists/Schedule";
 import DetailsContainer from "@/components/Physiotherapists/DetailsContainer";
-import { Physiotherapist } from "@/app/types/types";
+import { Physiotherapist } from "@/components/expolre/types/types";
 import { LinearGradient } from "expo-linear-gradient";
+import { SPRINGPORT8080, TOKEN } from "@/constants/apiConfig";
 
-const API_URL = "http://192.168.108.180:8080/api";
-const BEARER_TOKEN =
-  "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJub3VyMiIsImlhdCI6MTc0MzY3MDk3NiwiZXhwIjoxNzQzNzU3Mzc2fQ.zoEWR_Mq6nPVDr7Bbjf0fFfz8i3H5IJRf4pMTqDw8fY";
+const API_URL = SPRINGPORT8080 + "/api";
+const BEARER_TOKEN = TOKEN;
 
 export default function PhysiotherapistDetails() {
   const { physiotherapistID } = useLocalSearchParams<{

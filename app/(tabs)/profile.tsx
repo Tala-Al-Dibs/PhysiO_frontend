@@ -6,42 +6,43 @@ import {
   StyleSheet,
   TouchableOpacity,
   Modal,
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
 import ForwordHeadIcon from "@/components/svgIcons/problem/ForwordHeadIcon";
+import { SPRINGPORT8080, TOKEN } from "@/constants/apiConfig";
+import ProblemsListCards from "@/components/problem/ProblemsListCards";
 
 export default function ProfileScreen() {
   const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
-  const API_URL = "http://192.168.121.135:8080/api/";
-  const BEARER_TOKEN ="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJUZXN0VXNlciIsImlhdCI6MTc0MjQ1OTMzNywiZXhwIjoxNzQyNTQ1NzM3fQ.g8C__IYmAf_eyDjTCbxEXlkUYnrA_ChOmw2ivHiRh1s";
+  const API_URL = SPRINGPORT8080 + "/api/";
+  const BEARER_TOKEN = TOKEN;
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [userProblems, setUserProblems] = useState<{ name: string }[]>([]);
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        console.log("Fetching user from:", `${API_URL}users/1`);
         const response = await fetch(`${API_URL}users/1`, {
           method: "GET",
-          headers: {            Authorization: `Bearer ${BEARER_TOKEN}`,
+          headers: {
+            Authorization: `Bearer ${BEARER_TOKEN}`,
             "Content-Type": "application/json",
           },
         });
 
-        console.log("Response status:", response.status);
         if (!response.ok) {
           throw new Error(`Error ${response.status}: ${response.statusText}`);
         }
 
         const data = await response.json();
-        console.log("Response data:", data);
         setUser(data);
 
         const userID = data.userID;
-        console.log("Fetching profile for user ID:", userID);
         const profileResponse = await fetch(`${API_URL}profiles/${userID}`, {
           method: "GET",
           headers: {
@@ -55,8 +56,42 @@ export default function ProfileScreen() {
         }
 
         const profileData = await profileResponse.json();
-        console.log("Profile data:", profileData);
         setProfile(profileData); // Store the profile data
+        // Fetch problems
+        try {
+          const problemsResponse = await fetch(
+            `${API_URL}problems/user/${userID}/problems`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${BEARER_TOKEN}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (!problemsResponse.ok) {
+            throw new Error(
+              `Error fetching problems: ${problemsResponse.status}`
+            );
+          }
+
+          const problemsData = await problemsResponse.json();
+
+          // Make sure `problemsData` is an array of objects
+          if (
+            Array.isArray(problemsData) &&
+            problemsData.length > 0 &&
+            typeof problemsData[0] === "object"
+          ) {
+            setUserProblems(problemsData); // Store the entire object
+          } else {
+            console.error("Unexpected problems data format:", problemsData);
+            setUserProblems([]); // Default to empty array if format is wrong
+          }
+        } catch (err) {
+          console.error("Failed to fetch user problems:", err);
+        }
       } catch (error) {
         console.error("Failed to fetch user or profile:", error);
       }
@@ -73,8 +108,8 @@ export default function ProfileScreen() {
     require("@/assets/images/profile6pic.jpg"),
     require("@/assets/images/profile7pic.jpg"),
   ];
-  
- const [selectedImage, setSelectedImage] = useState(profileImages[0]);
+
+  const [selectedImage, setSelectedImage] = useState(profileImages[0]);
 
   const calculateAge = (dateOfBirth: string) => {
     const birthDate = new Date(dateOfBirth);
@@ -94,129 +129,139 @@ export default function ProfileScreen() {
       setModalVisible(false);
     }, [])
   );
-  
+
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={["#63c5da", "#ffffff"]}
-        style={styles.background}
-      />
-
-      <TouchableOpacity style={styles.backButton}>
-        <Ionicons name="chevron-back" size={28} color="black" />
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.settingsButton}
-        onPress={() => setModalVisible(true)}
-      >
-        <Ionicons name="settings-outline" size={24} color="black" />
-      </TouchableOpacity>
-
-      <View style={styles.profileContainer}>
-        <Image
-          source={selectedImage}
-          style={styles.profileImage}
+    <ScrollView style={{ backgroundColor: "#ffffff", flex: 1 }}>
+      <View style={styles.container}>
+        <LinearGradient
+          colors={["#63c5da", "#ffffff"]}
+          style={styles.background}
         />
+
+        <TouchableOpacity style={styles.backButton}>
+          <Ionicons name="chevron-back" size={28} color="black" />
+        </TouchableOpacity>
+
         <TouchableOpacity
-          style={styles.editIcon}
-          onPress={() => router.push("../(profile)/editProfile")}
+          style={styles.settingsButton}
+          onPress={() => setModalVisible(true)}
         >
-          <Ionicons name="pencil" size={18} color="white" />
+          <Ionicons name="settings-outline" size={24} color="black" />
         </TouchableOpacity>
-      </View>
 
-      <Text style={styles.name}>{user ? user.username : "Loading..."}</Text>
-
-      <View style={styles.genderIcon}>
-        <Ionicons
-          name={profile?.gender === "Female" ? "female" : "male"}
-          size={23}
-          color="orange"
-        />
-      </View>
-
-      <Text style={styles.location}>
-        {profile ? profile.location + "..." : "Loading..."}
-      </Text>
-
-      <View style={styles.infoContainer}>
-        <View style={styles.infoBox}>
-          <Text style={styles.infoNumber}>
-            {profile ? calculateAge(profile.dateOfBirth)+" " : "-"}
-            <Text style={styles.infoUnit}>Ys</Text>{" "}
-            {/* <Text style={styles.or}>|</Text> */}
-          </Text>
-          <Text style={styles.infoLabel}>Age </Text>
+        <View style={styles.profileContainer}>
+          <Image source={selectedImage} style={styles.profileImage} />
+          <TouchableOpacity
+            style={styles.editIcon}
+            onPress={() => router.push("../(profile)/editProfile")}
+          >
+            <Ionicons name="pencil" size={18} color="white" />
+          </TouchableOpacity>
         </View>
-        <View style={styles.infoBox}>
-          <Text style={styles.infoNumber}>
-            {profile ? profile.weight : "Loading..."}
-            <Text style={styles.infoUnit}>Kg</Text>{"  "}
-            {/* <Text style={styles.or}>|</Text> */}
-          </Text>
-          <Text style={styles.infoLabel}>Weight </Text>
+
+        <Text style={styles.name}>{user ? user.username : "Loading..."}</Text>
+
+        <View style={styles.genderIcon}>
+          <Ionicons
+            name={profile?.gender === "Female" ? "female" : "male"}
+            size={23}
+            color="orange"
+          />
         </View>
-        <View style={styles.infoBox}>
-          <Text style={styles.infoNumber}>
-            {profile ? profile.height : "Loading..."}
-            <Text style={styles.infoUnit}>cm</Text>
-            <Text style={styles.or}> </Text>
-          </Text>
-          <Text style={styles.infoLabel}>Height </Text>
-        </View>
-      </View>
 
-      <Text style={styles.sectionTitle}>Your Problems</Text>
-      <View style={styles.problemList}>
-        <TouchableOpacity style={styles.problemItem}>
-          <ForwordHeadIcon color="#3498db"></ForwordHeadIcon>
-          <Text style={styles.problemText}>Forward Head</Text>
-          <Ionicons name="chevron-forward" size={20} color="gray" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.problemItem}>
-          <ForwordHeadIcon color="#3498db"></ForwordHeadIcon>
-          <Text style={styles.problemText}>Forward Head</Text>
-          <Ionicons name="chevron-forward" size={20} color="gray" />
-        </TouchableOpacity>
-      </View>
+        <Text style={styles.location}>
+          {profile ? profile.location + "..." : "Loading..."}
+        </Text>
 
-      {/* SETTINGS MODAL */}
-      <Modal visible={modalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>General Setting</Text>
-
-            <TouchableOpacity style={styles.modalOption}   onPress={() => router.push("../(profile)/privacy")} >
-              <Ionicons name="lock-closed" size={20} color="#0CA7BD" />
-              <Text style={styles.modalText}>Privacy</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.modalOption}>
-              <Ionicons name="chatbubble-ellipses" size={20} color="#F39C12" />
-              <Text style={styles.modalText}>Feedback</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.modalOption}  onPress={() => router.push("../(profile)/help")}>
-              <Ionicons name="help-circle" size={20} color="#3498db" />
-              <Text style={styles.modalText}>Help</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.modalOption}>
-              <Ionicons name="log-out" size={20} color="red" />
-              <Text style={styles.modalText}>Logout</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setModalVisible(false)}
-              style={styles.closeButton}
-            >
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
+        <View style={styles.infoContainer}>
+          <View style={styles.infoBox}>
+            <Text style={styles.infoNumber}>
+              {profile ? calculateAge(profile.dateOfBirth) + " " : "-"}
+              <Text style={styles.infoUnit}>Ys</Text>{" "}
+              {/* <Text style={styles.or}>|</Text> */}
+            </Text>
+            <Text style={styles.infoLabel}>Age </Text>
+          </View>
+          <View style={styles.infoBox}>
+            <Text style={styles.infoNumber}>
+              {profile ? profile.weight : "Loading..."}
+              <Text style={styles.infoUnit}>Kg</Text>
+              {"  "}
+              {/* <Text style={styles.or}>|</Text> */}
+            </Text>
+            <Text style={styles.infoLabel}>Weight </Text>
+          </View>
+          <View style={styles.infoBox}>
+            <Text style={styles.infoNumber}>
+              {profile ? profile.height : "Loading..."}
+              <Text style={styles.infoUnit}>cm</Text>
+              <Text style={styles.or}> </Text>
+            </Text>
+            <Text style={styles.infoLabel}>Height </Text>
           </View>
         </View>
-      </Modal>
-    </View>
+
+        <Text style={styles.sectionTitle}>Your Problems</Text>
+        <View style={{ width: "87%" }}>
+          {userProblems.length > 0 ? (
+            <ProblemsListCards
+              problemList={userProblems.map((problem) => problem.name)}
+            />
+          ) : (
+            <Text style={{ textAlign: "center", marginTop: 10, color: "#999" }}>
+              No problems detected.
+            </Text>
+          )}
+        </View>
+
+        {/* SETTINGS MODAL */}
+        <Modal visible={modalVisible} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalTitle}>General Setting</Text>
+
+              <TouchableOpacity
+                style={styles.modalOption}
+                onPress={() => router.push("../(profile)/privacy")}
+              >
+                <Ionicons name="lock-closed" size={20} color="#0CA7BD" />
+                <Text style={styles.modalText}>Privacy</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.modalOption}>
+                <Ionicons
+                  name="chatbubble-ellipses"
+                  size={20}
+                  color="#F39C12"
+                />
+                <Text style={styles.modalText}>Feedback</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalOption}
+                onPress={() => router.push("../(profile)/help")}
+              >
+                <Ionicons name="help-circle" size={20} color="#3498db" />
+                <Text style={styles.modalText}>Help</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.modalOption}>
+                <Ionicons name="log-out" size={20} color="red" />
+                <Text style={styles.modalText}>Logout</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                style={styles.closeButton}
+              >
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </View>
+      <View style={{ height: 100 }}></View>
+    </ScrollView>
   );
 }
 
@@ -259,7 +304,7 @@ interface Profile {
 
 const styles = StyleSheet.create({
   // Styles...
-  container: { flex: 1, alignItems: "center", backgroundColor: "white" },
+  container: { alignItems: "center", backgroundColor: "white", height: "100%" },
   background: {
     position: "absolute",
     width: "100%",

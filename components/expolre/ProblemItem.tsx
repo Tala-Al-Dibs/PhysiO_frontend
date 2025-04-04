@@ -1,7 +1,21 @@
 import React from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
-import { Problem } from "@/app/types/types";
-import { Feather } from "@expo/vector-icons";
+import { Problem } from "@/components/expolre/types/types";
+import { ProblemColors } from "@/constants/Colors";
+import {
+  UnevenShouldersRightHigher,
+  UnevenShouldersLeftHigher,
+  UnevenHipsRightHigher,
+  UnevenHipsLeftHigher,
+  Scoliosis,
+  BowKnees,
+  KnockKnees,
+  ForwardHead,
+  RoundedShoulders,
+  Kyphosis,
+  Lordosis,
+} from "../svgIcons/problems/ProblemIconComponent";
+import { LinearGradient } from "expo-linear-gradient";
 
 interface ProblemItemProps {
   item: Problem;
@@ -33,123 +47,134 @@ const problemImages = {
   "Winged Scapula": require("@/assets/images/winged-scapula.png") as number,
 };
 
-const backgroundColors = [
-  "#f0f8ff",
-  "#f0fff0",
-  "#f0fff8",
-  "#f5faff",
-  "#fff5f5",
-  "#f8f5ff",
-  "#f0f8ff",
-  "#fffaf0",
-  "#f5fff0",
-  "#fff9f2",
-  "#faf0ff",
-  "#fff0f8",
-  "#f0f5ff",
-  "#fafff0",
-  "#f0fffa",
-  "#fff8f0",
-  "#fafafa",
-];
-
-type FeatherIconName =
-  | "activity"
-  | "alert-circle"
-  | "award"
-  | "bell"
-  | "bookmark";
-
-const problemIcons: Record<string, FeatherIconName> = {
-  "Bow Legs (Genu Varum)": "alert-circle",
-  "Anterior Pelvic Tilt": "activity",
-  "Forward Head Posture": "award",
-  "Hyperextension of the Knee": "bell",
-  "Knock Knees": "bookmark",
-  Kyphosis: "activity",
-  Lordosis: "alert-circle",
-  "Posterior Pelvic Tilt": "award",
-  "Rounded Shoulders": "bell",
-  Scoliosis: "bookmark",
-  "Flat Back (Straight Back)": "activity",
-  "Sway Back": "alert-circle",
-  "Tight Hamstrings": "award",
-  "Uneven Hips": "bell",
-  "Uneven Shoulders": "bookmark",
-  "Winged Scapula": "activity",
+const iconMapping = {
+  "Bow Legs (Genu Varum)": BowKnees,
+  "Anterior Pelvic Tilt": RoundedShoulders, // Adjust as needed
+  "Forward Head Posture": ForwardHead,
+  "Hyperextension of the Knee": KnockKnees, // Adjust as needed
+  "Knock Knees": KnockKnees,
+  Kyphosis: Kyphosis,
+  Lordosis: Lordosis,
+  "Posterior Pelvic Tilt": RoundedShoulders, // Adjust as needed
+  "Rounded Shoulders": RoundedShoulders,
+  Scoliosis: Scoliosis,
+  "Flat Back (Straight Back)": Kyphosis, // Adjust as needed
+  "Sway Back": Lordosis, // Adjust as needed
+  "Tight Hamstrings": RoundedShoulders, // Adjust as needed
+  "Uneven Hips": UnevenHipsRightHigher, // Default to right
+  "Uneven Shoulders": UnevenShouldersRightHigher, // Default to right
+  "Winged Scapula": RoundedShoulders, // Adjust as needed
 };
 
-const defaultIcon: FeatherIconName = "activity";
-
-const ProblemItem: React.FC<ProblemItemProps> = ({ item, onPress, index }) => {
-  const backgroundColor = backgroundColors[index % backgroundColors.length];
+const ProblemItem: React.FC<ProblemItemProps> = ({ item, onPress }) => {
+  const problemColor = ProblemColors[item.name] || "#0CA7BD"; // Default to main blue
+  const backgroundColor = `${problemColor}20`; // Add opacity (20% in hex)
   const problemImage = problemImages[item.name as keyof typeof problemImages];
-  const problemIcon = problemIcons[item.name] || defaultIcon;
+  const IconComponent = iconMapping[item.name as keyof typeof iconMapping];
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity
-        style={[styles.problemItem, { backgroundColor }]}
-        onPress={onPress}
-      >
-        <View style={styles.imageContainer}>
-          <Image source={problemImage} style={styles.image} />
-        </View>
-        <View style={styles.problemInfo}>
-          <Feather name={problemIcon} size={20} color="#333" />
-          <Text style={styles.problemName}>{item.name}</Text>
-        </View>
-      </TouchableOpacity>
-    </View>
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.4}
+      style={{ justifyContent: "center", alignItems: "center" }}
+    >
+      <View style={styles.cardContainer}>
+        <LinearGradient
+          colors={[`${problemColor}15`, `${problemColor}05`]}
+          style={styles.gradientBackground}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={styles.imageContainer}>
+            <Image source={problemImage} style={styles.image} />
+            <View style={styles.iconBadge}>
+              {IconComponent && (
+                <IconComponent
+                  color={problemColor}
+                  backgroundColor="transparent"
+                  // size={28}
+                />
+              )}
+            </View>
+          </View>
+
+          <View style={styles.textContainer}>
+            <Text style={[styles.problemName, { color: problemColor }]}>
+              {item.name}
+            </Text>
+            <View
+              style={[styles.colorIndicator, { backgroundColor: problemColor }]}
+            />
+          </View>
+        </LinearGradient>
+      </View>
+    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  problemItem: {
-    width: "80%",
-    height: 300,
-    marginBottom: 16,
-    borderRadius: 12,
+  cardContainer: {
+    width: "90%",
+    height: 200,
+    borderRadius: 20,
     overflow: "hidden",
+    marginHorizontal: 8,
+    marginVertical: 12,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.7,
-    shadowRadius: 8,
-    elevation: 8,
-    alignItems: "center",
-    justifyContent: "center",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+    backgroundColor: "transparent",
+  },
+  gradientBackground: {
+    flex: 1,
+    padding: 16,
+    justifyContent: "space-between",
   },
   imageContainer: {
-    width: "100%",
-    height: "70%",
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    position: "relative",
   },
   image: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 90,
-    width: "80%",
-    height: "80%",
+    width: "100%",
+    height: "100%",
     resizeMode: "contain",
   },
-  problemInfo: {
-    flexDirection: "row",
+  iconBadge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    borderRadius: 50,
+    width: 50,
+    height: 50,
+    justifyContent: "center",
     alignItems: "center",
-    marginTop: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  textContainer: {
+    marginTop: 12,
+    paddingHorizontal: 4,
   },
   problemName: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "600",
-    color: "#333",
-    marginLeft: 8,
+    marginBottom: 6,
+    textAlign: "center",
+  },
+  colorIndicator: {
+    height: 3,
+    width: "40%",
+    alignSelf: "center",
+    borderRadius: 2,
+    marginTop: 4,
   },
 });
 

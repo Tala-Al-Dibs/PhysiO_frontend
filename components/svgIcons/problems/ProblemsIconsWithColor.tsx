@@ -12,6 +12,13 @@ import {
   RoundedShoulders,
   Kyphosis,
   Lordosis,
+  SwayBack,
+  FlatBack,
+  WingedScapula,
+  AnteriorPelvicTilt,
+  KneesHyperExtrntion,
+  PosteriorPelvicTilt,
+  TightHamestring,
 } from "./ProblemIconComponent"; // Ensure correct import path
 import { ProblemColors } from "@/constants/Colors";
 
@@ -32,6 +39,13 @@ const iconMapping: Record<
   "Rounded Shoulders": RoundedShoulders,
   "Uneven Shoulders": UnevenShouldersRightHigher, // Default to right if general
   "Uneven Hips": UnevenHipsRightHigher, // Default to right if general
+  "Sway Back": SwayBack,
+  "Flat Back": FlatBack,
+  "Winged Scapula": WingedScapula,
+  "Anterior Pelvic Tilt": AnteriorPelvicTilt,
+  "Hyperextension of the Knee": KneesHyperExtrntion,
+  "Posterior Pelvic Tilt": PosteriorPelvicTilt,
+  "Tight Hamstrings": TightHamestring,
 };
 
 interface IconComponentProps {

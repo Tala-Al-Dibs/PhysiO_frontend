@@ -11,15 +11,22 @@ import IconComponent from "../svgIcons/problems/IconComponent";
 
 // Minimalist explanations for problems without ":"
 const explanations: Record<string, string> = {
-  Scoliosis: 'An "S" shaped spine.',
+  "Anterior Pelvic Tilt": "Pelvis tilts forward, causing lower back pain.",
+  "Bow Knees": "Legs curve outward at the knees.",
+  "Forward Head Posture": "Head is positioned forward of the shoulders.",
+  "Hyperextension of the Knee": "Knee joint extends beyond its normal range.",
+  "Knock Knees": "Knees tilt inward while ankles remain apart.",
   Kyphosis: "Excessive forward rounding of the back.",
-  "Bow Knees":
-    "Or Genu varum, one or both of the legs curve outward at the knees.",
-  "Knock knees":
-    "Or genu valgum, the knees tilt inward while the ankles remain spaced apart.",
-  "Forward Head":
-    "Or Text Neck, A head that is positioned forward of the shoulders.",
-  "Rounded Shoulders": "shoulders are out of proper alignment with the spine.",
+  Lordosis: "Excessive inward curve of the lower back.",
+  "Posterior Pelvic Tilt": "Pelvis tilts backward, flattening the lower back.",
+  "Rounded Shoulders": "Shoulders misaligned with the spine.",
+  Scoliosis: "An 'S' shaped spine.",
+  "Flat Back (Straight Back)": "Spine loses its natural curve.",
+  "Sway Back": "Lower back curvature causes pelvis to tilt forward.",
+  "Tight Hamstrings": "Hamstrings are too tight, affecting posture.",
+  "Uneven Hips": "One hip is higher or lower than the other.",
+  "Uneven Shoulders": "One shoulder is higher or lower than the other.",
+  "Winged Scapula": "Shoulder blade protrudes from the back.",
 };
 
 const ProblemsListCards = ({ problemList }: { problemList: string[] }) => {

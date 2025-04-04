@@ -1,13 +1,12 @@
-
 import {
   Image,
   StyleSheet,
-
   Text,
   View,
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
+  RefreshControl,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
@@ -15,7 +14,7 @@ import {
 } from "react-native-responsive-screen";
 
 import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import ProgressRing from "@/components/progress/ProgressRing";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SPRINGPORT8080, TOKEN, USERID } from "@/constants/apiConfig";
@@ -28,43 +27,49 @@ interface User {
   password: string;
 }
 
-
 export default function HomeScreen() {
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const today = new Date();
   const route = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchUsername = async () => {
+    try {
+      setRefreshing(true);
+      const response = await fetch(`${SPRINGPORT8080}/api/users/${USERID}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+          Accept: "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: User = await response.json();
+      setUsername(data.username);
+      setError(null); // Clear any previous errors on successful fetch
+    } catch (error) {
+      console.error("Error fetching username:", error);
+      setError(
+        error instanceof Error ? error.message : "Unknown error occurred"
+      );
+      setUsername("User");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchUsername = async () => {
-      try {
-        const response = await fetch(`${SPRINGPORT8080}/api/users/${USERID}`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${TOKEN}`,
-            Accept: "application/json",
-          },
-        });
+    fetchUsername();
+  }, []);
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data: User = await response.json();
-        setUsername(data.username);
-      } catch (error) {
-        console.error("Error fetching username:", error);
-        setError(
-          error instanceof Error ? error.message : "Unknown error occurred"
-        );
-        // Fallback to a default username if API fails
-        setUsername("User");
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  const onRefresh = useCallback(() => {
     fetchUsername();
   }, []);
 
@@ -81,7 +86,6 @@ export default function HomeScreen() {
   };
 
   const { message, icon } = getGreeting();
-
 
   if (loading) {
     return (
@@ -100,8 +104,11 @@ export default function HomeScreen() {
   }
 
   return (
-
-    <ScrollView>
+    <ScrollView
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       <View
         style={{
           paddingTop: hp(8),
@@ -152,7 +159,6 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
