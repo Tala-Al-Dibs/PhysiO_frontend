@@ -16,9 +16,8 @@ import { Physiotherapist } from "@/app/types/types";
 import { LinearGradient } from "expo-linear-gradient";
 import { SPRINGPORT8080, TOKEN } from "@/constants/apiConfig";
 
-const API_URL = "http://192.168.1.6:8080/api";
 
-// const API_URL = SPRINGPORT8080 + "/api";
+const API_URL = SPRINGPORT8080 + "/api";
 const BEARER_TOKEN = TOKEN;
 export default function PhysiotherapistDetails() {
   const { physiotherapistID } = useLocalSearchParams<{
