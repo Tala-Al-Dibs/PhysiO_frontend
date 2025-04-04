@@ -24,7 +24,6 @@ import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as MediaLibrary from "expo-media-library";
 import { BlurView } from "expo-blur";
-import DropDownPicker from "react-native-dropdown-picker";
 
 export default function Camera() {
   const [facing, setFacing] = useState<CameraType>("back");

@@ -16,8 +16,8 @@ import { Ionicons, MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import { LinearGradient } from "expo-linear-gradient";
 import { SPRINGPORT8080, TOKEN, USERID } from "@/constants/apiConfig";
-import PhysioHeader from "@/components/physiotherapists/physiotherapistsHeader";
-import FilterModal from "@/components/physiotherapists/FilterModal";
+import FilterModal from "@/components/Physiotherapists/FilterModal";
+import PhysioHeader from "@/components/Physiotherapists/physiotherapistsHeader";
 
 interface Physiotherapist {
   physiotherapistID: number;
