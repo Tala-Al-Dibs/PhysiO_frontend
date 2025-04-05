@@ -59,7 +59,7 @@ const explore: React.FC = () => {
   const fetchUserProblems = async () => {
     try {
       const response = await fetch(
-        `${API_URL}/problems/user/${DUMMY_USER_ID}/problems`, // Fixed endpoint
+        `${API_URL}/problems/user/${DUMMY_USER_ID}/problems`,
         {
           method: "GET",
           headers: {
@@ -75,7 +75,7 @@ const explore: React.FC = () => {
       }
 
       const data = await response.json();
-      console.log("User problems data:", data); // Log the response
+      console.log("User problems data:", data);
       setUserProblems(data);
     } catch (error) {
       console.error("Failed to fetch user problems:", error);
