@@ -17,8 +17,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { SPRINGPORT8080, TOKEN } from "@/constants/apiConfig";
 
 const API_URL = SPRINGPORT8080 + "/api";
-const BEARER_TOKEN = TOKEN;
-
 
 // const API_URL = SPRINGPORT8080 + "/api";
 const BEARER_TOKEN = TOKEN;
