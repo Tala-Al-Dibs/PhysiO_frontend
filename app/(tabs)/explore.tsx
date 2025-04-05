@@ -15,12 +15,14 @@ import FilterDropdown from "@/components/expolre/FilterDropdown";
 import ProblemItem from "@/components/expolre/ProblemItem";
 import PhysiotherapistItem from "@/components/expolre/PhysiotherapistItem";
 import SearchBar from "@/components/expolre/SearchBar";
-import { Problem, Physiotherapist } from "@/app/types/types";
-import { router } from "expo-router";
+
+import { Problem, Physiotherapist } from "@/components/expolre/types/types";
+import { router, useRouter } from "expo-router";
 import { SPRINGPORT8080, TOKEN, USERID } from "@/constants/apiConfig";
 
- const API_URL = SPRINGPORT8080 + "/api";
+const API_URL = `${SPRINGPORT8080}/api`;
 const BEARER_TOKEN = TOKEN;
+
 const DUMMY_USER_ID = USERID;
 
 const DUMMY_USER_LOCATION = "BETHLEHEM";
@@ -31,6 +33,7 @@ const explore: React.FC = () => {
   const [physiotherapists, setPhysiotherapists] = useState<Physiotherapist[]>(
     []
   );
+  const router = useRouter();
   const [filteredProblems, setFilteredProblems] = useState<Problem[]>([]);
   const [filteredPhysiotherapists, setFilteredPhysiotherapists] = useState<
     Physiotherapist[]
@@ -56,7 +59,7 @@ const explore: React.FC = () => {
   const fetchUserProblems = async () => {
     try {
       const response = await fetch(
-        `${API_URL}/problems/${DUMMY_USER_ID}/problems`,
+        `${API_URL}/problems/user/${DUMMY_USER_ID}/problems`,
         {
           method: "GET",
           headers: {
@@ -65,14 +68,17 @@ const explore: React.FC = () => {
           },
         }
       );
-
       if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error details:", errorData);
         throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
+      console.log("User problems data:", data);
       setUserProblems(data);
     } catch (error) {
+      console.error("Failed to fetch user problems:", error);
       setUserProblems([]);
     }
   };
@@ -254,6 +260,12 @@ const explore: React.FC = () => {
         });
       } else {
         addToLatestSearches(item.name);
+        router.push({
+          pathname: "../(problem)/problem",
+          params: {
+            problem: item.name,
+          },
+        });
       }
     };
 
@@ -294,7 +306,15 @@ const explore: React.FC = () => {
             renderItem={({ item, index }) => (
               <ProblemItem
                 item={item}
-                onPress={() => addToLatestSearches(item.name)}
+                onPress={() => {
+                  addToLatestSearches(item.name),
+                    router.push({
+                      pathname: "../(problem)/problem",
+                      params: {
+                        problem: item.name, // Send only the problem name
+                      },
+                    });
+                }}
                 index={index}
               />
             )}
@@ -348,7 +368,15 @@ const explore: React.FC = () => {
                   renderItem={({ item, index }) => (
                     <ProblemItem
                       item={item}
-                      onPress={() => addToLatestSearches(item.name)}
+                      onPress={() => {
+                        addToLatestSearches(item.name),
+                          router.push({
+                            pathname: "../(problem)/problem",
+                            params: {
+                              problem: item.name, // Send only the problem name
+                            },
+                          });
+                      }}
                       index={index}
                     />
                   )}
