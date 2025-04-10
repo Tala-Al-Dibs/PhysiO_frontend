@@ -337,6 +337,21 @@ export default function ProblemExercise() {
       >
         <Text style={styles.buttonText}>Start Exercise</Text>
       </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.PhysiotherapContainer}
+        onPress={() => route.push("./(physiotherapist)/physiotherapistsN")}
+      >
+        <View style={styles.PhysiotherapContainerIcon}>
+          <PhysiotherapistIcon />
+          <Text style={styles.PhysiotherapText}>Find Physiotherapist</Text>
+        </View>
+        <MaterialIcons
+          name="keyboard-arrow-right"
+          size={37}
+          color="rgba(12, 167, 189, 0.59)"
+          //   style={styles.arrowIcon}
+        />
+      </TouchableOpacity>
     </View>
   );
 }
