@@ -13,8 +13,6 @@ import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { Ionicons, MaterialIcons, FontAwesome } from "@expo/vector-icons";
-import Slider from "@react-native-community/slider";
-import { LinearGradient } from "expo-linear-gradient";
 import { SPRINGPORT8080, TOKEN, USERID } from "@/constants/apiConfig";
 import PhysioHeader from "@/components/Physiotherapists/physiotherapistsHeader";
 import FilterModal from "@/components/Physiotherapists/FilterModal";

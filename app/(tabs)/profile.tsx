@@ -11,7 +11,6 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
-import ForwordHeadIcon from "@/components/svgIcons/problem/ForwordHeadIcon";
 import { SPRINGPORT8080, TOKEN } from "@/constants/apiConfig";
 import ProblemsListCards from "@/components/problem/ProblemsListCards";
 
@@ -23,6 +22,50 @@ export default function ProfileScreen() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userProblems, setUserProblems] = useState<{ name: string }[]>([]);
+
+  // Define a type for the image map
+  type ProfileImageMap = {
+    default: any;
+    avatar1: any;
+    avatar2: any;
+    avatar3: any;
+    avatar4: any;
+    avatar5: any;
+    avatar6: any;
+    avatar7: any;
+    avatar8: any;
+    avatar9: any;
+    avatar10: any;
+    avatar11: any;
+  };
+
+  // Create the map with the type
+  const profileImageMap: ProfileImageMap = {
+    default: require("../../assets/images/avatar/default.png"),
+    avatar1: require("../../assets/images/avatar/avatar1.png"),
+    avatar2: require("../../assets/images/avatar/avatar2.png"),
+    avatar3: require("../../assets/images/avatar/avatar3.png"),
+    avatar4: require("../../assets/images/avatar/avatar4.png"),
+    avatar5: require("../../assets/images/avatar/avatar5.png"),
+    avatar6: require("../../assets/images/avatar/avatar6.png"),
+    avatar7: require("../../assets/images/avatar/avatar7.png"),
+    avatar8: require("../../assets/images/avatar/avatar8.png"),
+    avatar9: require("../../assets/images/avatar/avatar9.png"),
+    avatar10: require("../../assets/images/avatar/avatar10.png"),
+    avatar11: require("../../assets/images/avatar/avatar11.png"),
+  };
+
+  // Update the getProfileImage function
+  const getProfileImage = (imageName?: string) => {
+    if (!imageName)
+      return require("../../assets/images/avatar/default.png");
+
+    // Type assertion if you're sure imageName will be a valid key
+    return (
+      profileImageMap[imageName as keyof ProfileImageMap] ||
+      require("../../assets/images/avatar/default.png")
+    );
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -86,8 +129,8 @@ export default function ProfileScreen() {
           ) {
             setUserProblems(problemsData); // Store the entire object
           } else {
-            console.error("Unexpected problems data format:", problemsData);
-            setUserProblems([]); // Default to empty array if format is wrong
+            console.log("No problems returned or unexpected format.");
+            setUserProblems([]);
           }
         } catch (err) {
           console.error("Failed to fetch user problems:", err);
@@ -100,27 +143,18 @@ export default function ProfileScreen() {
     fetchUser();
   }, []);
 
-  const profileImages = [
-    require("@/assets/images/profile.png"),
-    require("@/assets/images/profile2pic.jpg"),
-    require("@/assets/images/profile3pic.jpg"),
-    require("@/assets/images/profile4pic.jpg"),
-    require("@/assets/images/profile6pic.jpg"),
-    require("@/assets/images/profile7pic.jpg"),
-  ];
-
-  const [selectedImage, setSelectedImage] = useState(profileImages[0]);
-
-  const calculateAge = (dateOfBirth: string) => {
+  const calculateAge = (dateOfBirth: string | null) => {
+    if (!dateOfBirth) return "-"; // Return dash or "Not specified" when no date exists
+    
     const birthDate = new Date(dateOfBirth);
     const today = new Date();
-    const age = today.getFullYear() - birthDate.getFullYear();
-    const month = today.getMonth() - birthDate.getMonth();
-
-    // Adjust the age if the birthday hasn't occurred yet this year
-    if (month < 0 || (month === 0 && today.getDate() < birthDate.getDate())) {
-      return age - 1;
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
     }
+    
     return age;
   };
 
@@ -150,7 +184,10 @@ export default function ProfileScreen() {
         </TouchableOpacity>
 
         <View style={styles.profileContainer}>
-          <Image source={selectedImage} style={styles.profileImage} />
+          <Image
+            source={getProfileImage(profile?.profilePictureUri)}
+            style={styles.profileImage}
+          />
           <TouchableOpacity
             style={styles.editIcon}
             onPress={() => router.push("../(profile)/editProfile")}
@@ -175,12 +212,11 @@ export default function ProfileScreen() {
 
         <View style={styles.infoContainer}>
           <View style={styles.infoBox}>
-            <Text style={styles.infoNumber}>
-              {profile ? calculateAge(profile.dateOfBirth) + " " : "-"}
-              <Text style={styles.infoUnit}>Ys</Text>{" "}
-              {/* <Text style={styles.or}>|</Text> */}
-            </Text>
-            <Text style={styles.infoLabel}>Age </Text>
+          <Text style={styles.infoNumber}>
+    {profile ? (calculateAge(profile.dateOfBirth)) || "-" : "-"}
+    <Text style={styles.infoUnit}> Ys</Text>
+  </Text>
+  <Text style={styles.infoLabel}>Age</Text>
           </View>
           <View style={styles.infoBox}>
             <Text style={styles.infoNumber}>
