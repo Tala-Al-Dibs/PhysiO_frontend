@@ -6,42 +6,86 @@ import {
   StyleSheet,
   TouchableOpacity,
   Modal,
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
-import ForwordHeadIcon from "@/components/svgIcons/problem/ForwordHeadIcon";
+import { SPRINGPORT8080, TOKEN } from "@/constants/apiConfig";
+import ProblemsListCards from "@/components/problem/ProblemsListCards";
 
 export default function ProfileScreen() {
   const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
-  const API_URL = "http://192.168.121.135:8080/api/";
-  const BEARER_TOKEN ="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJUZXN0VXNlciIsImlhdCI6MTc0MjQ1OTMzNywiZXhwIjoxNzQyNTQ1NzM3fQ.g8C__IYmAf_eyDjTCbxEXlkUYnrA_ChOmw2ivHiRh1s";
+  const API_URL = SPRINGPORT8080 + "/api/";
+  const BEARER_TOKEN = TOKEN;
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [userProblems, setUserProblems] = useState<{ name: string }[]>([]);
+
+  // Define a type for the image map
+  type ProfileImageMap = {
+    default: any;
+    avatar1: any;
+    avatar2: any;
+    avatar3: any;
+    avatar4: any;
+    avatar5: any;
+    avatar6: any;
+    avatar7: any;
+    avatar8: any;
+    avatar9: any;
+    avatar10: any;
+    avatar11: any;
+  };
+
+  // Create the map with the type
+  const profileImageMap: ProfileImageMap = {
+    default: require("../../assets/images/avatar/default.png"),
+    avatar1: require("../../assets/images/avatar/avatar1.png"),
+    avatar2: require("../../assets/images/avatar/avatar2.png"),
+    avatar3: require("../../assets/images/avatar/avatar3.png"),
+    avatar4: require("../../assets/images/avatar/avatar4.png"),
+    avatar5: require("../../assets/images/avatar/avatar5.png"),
+    avatar6: require("../../assets/images/avatar/avatar6.png"),
+    avatar7: require("../../assets/images/avatar/avatar7.png"),
+    avatar8: require("../../assets/images/avatar/avatar8.png"),
+    avatar9: require("../../assets/images/avatar/avatar9.png"),
+    avatar10: require("../../assets/images/avatar/avatar10.png"),
+    avatar11: require("../../assets/images/avatar/avatar11.png"),
+  };
+
+  // Update the getProfileImage function
+  const getProfileImage = (imageName?: string) => {
+    if (!imageName)
+      return require("../../assets/images/avatar/default.png");
+
+    // Type assertion if you're sure imageName will be a valid key
+    return (
+      profileImageMap[imageName as keyof ProfileImageMap] ||
+      require("../../assets/images/avatar/default.png")
+    );
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        console.log("Fetching user from:", `${API_URL}users/1`);
         const response = await fetch(`${API_URL}users/1`, {
           method: "GET",
-          headers: {            Authorization: `Bearer ${BEARER_TOKEN}`,
+          headers: {
+            Authorization: `Bearer ${BEARER_TOKEN}`,
             "Content-Type": "application/json",
           },
         });
 
-        console.log("Response status:", response.status);
         if (!response.ok) {
           throw new Error(`Error ${response.status}: ${response.statusText}`);
         }
 
         const data = await response.json();
-        console.log("Response data:", data);
         setUser(data);
 
         const userID = data.userID;
-        console.log("Fetching profile for user ID:", userID);
         const profileResponse = await fetch(`${API_URL}profiles/${userID}`, {
           method: "GET",
           headers: {
@@ -55,8 +99,42 @@ export default function ProfileScreen() {
         }
 
         const profileData = await profileResponse.json();
-        console.log("Profile data:", profileData);
         setProfile(profileData); // Store the profile data
+        // Fetch problems
+        try {
+          const problemsResponse = await fetch(
+            `${API_URL}problems/user/${userID}/problems`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${BEARER_TOKEN}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (!problemsResponse.ok) {
+            throw new Error(
+              `Error fetching problems: ${problemsResponse.status}`
+            );
+          }
+
+          const problemsData = await problemsResponse.json();
+
+          // Make sure `problemsData` is an array of objects
+          if (
+            Array.isArray(problemsData) &&
+            problemsData.length > 0 &&
+            typeof problemsData[0] === "object"
+          ) {
+            setUserProblems(problemsData); // Store the entire object
+          } else {
+            console.log("No problems returned or unexpected format.");
+            setUserProblems([]);
+          }
+        } catch (err) {
+          console.error("Failed to fetch user problems:", err);
+        }
       } catch (error) {
         console.error("Failed to fetch user or profile:", error);
       }
@@ -65,27 +143,18 @@ export default function ProfileScreen() {
     fetchUser();
   }, []);
 
-  const profileImages = [
-    require("@/assets/images/profile.png"),
-    require("@/assets/images/profile2pic.jpg"),
-    require("@/assets/images/profile3pic.jpg"),
-    require("@/assets/images/profile4pic.jpg"),
-    require("@/assets/images/profile6pic.jpg"),
-    require("@/assets/images/profile7pic.jpg"),
-  ];
-  
- const [selectedImage, setSelectedImage] = useState(profileImages[0]);
-
-  const calculateAge = (dateOfBirth: string) => {
+  const calculateAge = (dateOfBirth: string | null) => {
+    if (!dateOfBirth) return "-"; // Return dash or "Not specified" when no date exists
+    
     const birthDate = new Date(dateOfBirth);
     const today = new Date();
-    const age = today.getFullYear() - birthDate.getFullYear();
-    const month = today.getMonth() - birthDate.getMonth();
-
-    // Adjust the age if the birthday hasn't occurred yet this year
-    if (month < 0 || (month === 0 && today.getDate() < birthDate.getDate())) {
-      return age - 1;
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
     }
+    
     return age;
   };
 
@@ -94,129 +163,141 @@ export default function ProfileScreen() {
       setModalVisible(false);
     }, [])
   );
-  
+
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={["#63c5da", "#ffffff"]}
-        style={styles.background}
-      />
-
-      <TouchableOpacity style={styles.backButton}>
-        <Ionicons name="chevron-back" size={28} color="black" />
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.settingsButton}
-        onPress={() => setModalVisible(true)}
-      >
-        <Ionicons name="settings-outline" size={24} color="black" />
-      </TouchableOpacity>
-
-      <View style={styles.profileContainer}>
-        <Image
-          source={selectedImage}
-          style={styles.profileImage}
+    <ScrollView style={{ backgroundColor: "#ffffff", flex: 1 }}>
+      <View style={styles.container}>
+        <LinearGradient
+          colors={["#63c5da", "#ffffff"]}
+          style={styles.background}
         />
+
+        <TouchableOpacity style={styles.backButton}>
+          <Ionicons name="chevron-back" size={28} color="black" />
+        </TouchableOpacity>
+
         <TouchableOpacity
-          style={styles.editIcon}
-          onPress={() => router.push("../(profile)/editProfile")}
+          style={styles.settingsButton}
+          onPress={() => setModalVisible(true)}
         >
-          <Ionicons name="pencil" size={18} color="white" />
+          <Ionicons name="settings-outline" size={24} color="black" />
         </TouchableOpacity>
-      </View>
 
-      <Text style={styles.name}>{user ? user.username : "Loading..."}</Text>
-
-      <View style={styles.genderIcon}>
-        <Ionicons
-          name={profile?.gender === "Female" ? "female" : "male"}
-          size={23}
-          color="orange"
-        />
-      </View>
-
-      <Text style={styles.location}>
-        {profile ? profile.location + "..." : "Loading..."}
-      </Text>
-
-      <View style={styles.infoContainer}>
-        <View style={styles.infoBox}>
-          <Text style={styles.infoNumber}>
-            {profile ? calculateAge(profile.dateOfBirth)+" " : "-"}
-            <Text style={styles.infoUnit}>Ys</Text>{" "}
-            {/* <Text style={styles.or}>|</Text> */}
-          </Text>
-          <Text style={styles.infoLabel}>Age </Text>
+        <View style={styles.profileContainer}>
+          <Image
+            source={getProfileImage(profile?.profilePictureUri)}
+            style={styles.profileImage}
+          />
+          <TouchableOpacity
+            style={styles.editIcon}
+            onPress={() => router.push("../(profile)/editProfile")}
+          >
+            <Ionicons name="pencil" size={18} color="white" />
+          </TouchableOpacity>
         </View>
-        <View style={styles.infoBox}>
-          <Text style={styles.infoNumber}>
-            {profile ? profile.weight : "Loading..."}
-            <Text style={styles.infoUnit}>Kg</Text>{"  "}
-            {/* <Text style={styles.or}>|</Text> */}
-          </Text>
-          <Text style={styles.infoLabel}>Weight </Text>
+
+        <Text style={styles.name}>{user ? user.username : "Loading..."}</Text>
+
+        <View style={styles.genderIcon}>
+          <Ionicons
+            name={profile?.gender === "Female" ? "female" : "male"}
+            size={23}
+            color="orange"
+          />
         </View>
-        <View style={styles.infoBox}>
+
+        <Text style={styles.location}>
+          {profile ? profile.location + "..." : "Loading..."}
+        </Text>
+
+        <View style={styles.infoContainer}>
+          <View style={styles.infoBox}>
           <Text style={styles.infoNumber}>
-            {profile ? profile.height : "Loading..."}
-            <Text style={styles.infoUnit}>cm</Text>
-            <Text style={styles.or}> </Text>
-          </Text>
-          <Text style={styles.infoLabel}>Height </Text>
-        </View>
-      </View>
-
-      <Text style={styles.sectionTitle}>Your Problems</Text>
-      <View style={styles.problemList}>
-        <TouchableOpacity style={styles.problemItem}>
-          <ForwordHeadIcon color="#3498db"></ForwordHeadIcon>
-          <Text style={styles.problemText}>Forward Head</Text>
-          <Ionicons name="chevron-forward" size={20} color="gray" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.problemItem}>
-          <ForwordHeadIcon color="#3498db"></ForwordHeadIcon>
-          <Text style={styles.problemText}>Forward Head</Text>
-          <Ionicons name="chevron-forward" size={20} color="gray" />
-        </TouchableOpacity>
-      </View>
-
-      {/* SETTINGS MODAL */}
-      <Modal visible={modalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>General Setting</Text>
-
-            <TouchableOpacity style={styles.modalOption}   onPress={() => router.push("../(profile)/privacy")} >
-              <Ionicons name="lock-closed" size={20} color="#0CA7BD" />
-              <Text style={styles.modalText}>Privacy</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.modalOption}>
-              <Ionicons name="chatbubble-ellipses" size={20} color="#F39C12" />
-              <Text style={styles.modalText}>Feedback</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.modalOption}  onPress={() => router.push("../(profile)/help")}>
-              <Ionicons name="help-circle" size={20} color="#3498db" />
-              <Text style={styles.modalText}>Help</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.modalOption}>
-              <Ionicons name="log-out" size={20} color="red" />
-              <Text style={styles.modalText}>Logout</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setModalVisible(false)}
-              style={styles.closeButton}
-            >
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
+    {profile ? (calculateAge(profile.dateOfBirth)) || "-" : "-"}
+    <Text style={styles.infoUnit}> Ys</Text>
+  </Text>
+  <Text style={styles.infoLabel}>Age</Text>
+          </View>
+          <View style={styles.infoBox}>
+            <Text style={styles.infoNumber}>
+              {profile ? profile.weight : "Loading..."}
+              <Text style={styles.infoUnit}>Kg</Text>
+              {"  "}
+              {/* <Text style={styles.or}>|</Text> */}
+            </Text>
+            <Text style={styles.infoLabel}>Weight </Text>
+          </View>
+          <View style={styles.infoBox}>
+            <Text style={styles.infoNumber}>
+              {profile ? profile.height : "Loading..."}
+              <Text style={styles.infoUnit}>cm</Text>
+              <Text style={styles.or}> </Text>
+            </Text>
+            <Text style={styles.infoLabel}>Height </Text>
           </View>
         </View>
-      </Modal>
-    </View>
+
+        <Text style={styles.sectionTitle}>Your Problems</Text>
+        <View style={{ width: "87%" }}>
+          {userProblems.length > 0 ? (
+            <ProblemsListCards
+              problemList={userProblems.map((problem) => problem.name)}
+            />
+          ) : (
+            <Text style={{ textAlign: "center", marginTop: 10, color: "#999" }}>
+              No problems detected.
+            </Text>
+          )}
+        </View>
+
+        {/* SETTINGS MODAL */}
+        <Modal visible={modalVisible} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalTitle}>General Setting</Text>
+
+              <TouchableOpacity
+                style={styles.modalOption}
+                onPress={() => router.push("../(profile)/privacy")}
+              >
+                <Ionicons name="lock-closed" size={20} color="#0CA7BD" />
+                <Text style={styles.modalText}>Privacy</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.modalOption}>
+                <Ionicons
+                  name="chatbubble-ellipses"
+                  size={20}
+                  color="#F39C12"
+                />
+                <Text style={styles.modalText}>Feedback</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalOption}
+                onPress={() => router.push("../(profile)/help")}
+              >
+                <Ionicons name="help-circle" size={20} color="#3498db" />
+                <Text style={styles.modalText}>Help</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.modalOption}>
+                <Ionicons name="log-out" size={20} color="red" />
+                <Text style={styles.modalText}>Logout</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                style={styles.closeButton}
+              >
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </View>
+      <View style={{ height: 100 }}></View>
+    </ScrollView>
   );
 }
 
@@ -259,7 +340,7 @@ interface Profile {
 
 const styles = StyleSheet.create({
   // Styles...
-  container: { flex: 1, alignItems: "center", backgroundColor: "white" },
+  container: { alignItems: "center", backgroundColor: "white", height: "100%" },
   background: {
     position: "absolute",
     width: "100%",
