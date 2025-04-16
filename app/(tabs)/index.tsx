@@ -13,11 +13,11 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 
-import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect, useCallback } from "react";
 import ProgressRing from "@/components/progress/ProgressRing";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { SPRINGPORT8080, TOKEN, USERID } from "@/constants/apiConfig";
+import { useRouter } from "expo-router";
+import {  SPRINGPORT8080, getCurrentToken, getCurrentUserId } from "@/constants/apiConfig";
 import SideList from "@/components/home/sideList";
 import IndividualProblemProgress from "@/components/progress/IndividualProblemProgress";
 
@@ -34,14 +34,42 @@ export default function HomeScreen() {
   const today = new Date();
   const route = useRouter();
   const [refreshing, setRefreshing] = useState(false);
+  const [bearerToken, setBearerToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  const fetchUsername = async () => {
+
+  const initializeAuth = useCallback(async () => {
+    try {
+      const token = await getCurrentToken();
+      const id = await getCurrentUserId();
+      
+      if (!token || !id) {
+        throw new Error("Authentication required");
+      }
+      
+      setBearerToken(token);
+      setUserId(id);
+      fetchUsername(token, id);
+    } catch (err) {
+      console.error("Error initializing auth:", err);
+      setError("Authentication failed. Please sign in again.");
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
+
+  const fetchUsername = async (token: string, userId: string) => {
     try {
       setRefreshing(true);
-      const response = await fetch(`${SPRINGPORT8080}/api/users/${USERID}`, {
+      setLoading(true);
+      
+      const response = await fetch(`${SPRINGPORT8080}/api/users/${userId}`, {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${TOKEN}`,
+          Authorization: `Bearer ${token}`,
           Accept: "application/json",
         },
       });
@@ -52,7 +80,7 @@ export default function HomeScreen() {
 
       const data: User = await response.json();
       setUsername(data.username);
-      setError(null); // Clear any previous errors on successful fetch
+      setError(null);
     } catch (error) {
       console.error("Error fetching username:", error);
       setError(
@@ -65,13 +93,11 @@ export default function HomeScreen() {
     }
   };
 
-  useEffect(() => {
-    fetchUsername();
-  }, []);
-
   const onRefresh = useCallback(() => {
-    fetchUsername();
-  }, []);
+    if (bearerToken && userId) {
+      fetchUsername(bearerToken, userId);
+    }
+  }, [bearerToken, userId]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -142,7 +168,16 @@ export default function HomeScreen() {
             <ProgressRing type={"home"} />
           </View>
         </View>
-        <IndividualProblemProgress />
+        {userId && bearerToken ? (
+          <IndividualProblemProgress 
+            bearerToken={bearerToken} 
+            userId={Number(userId)} 
+          />
+        ) : (
+          <Text style={styles.errorText}>
+            Authentication required to view problems
+          </Text>
+        )}
         <TouchableOpacity
           style={styles.PhysiotherapContainer}
           onPress={() => route.push("./(physiotherapist)/physiotherapistsN")}

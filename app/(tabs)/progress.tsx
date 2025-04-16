@@ -1,8 +1,6 @@
 
 import {
-  Image,
   StyleSheet,
-  Platform,
   Text,
   View,
   TouchableOpacity,
@@ -12,21 +10,41 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { Feather, Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ProgressRing from "@/components/progress/ProgressRing";
-import React from "react";
 import ProgressCalender from "@/components/progress/ProgressCalender";
 import ProgressWeekly from "@/components/progress/ProgressWeekly";
 import ProgressHeader from "@/components/progress/ProgressHeader";
 import IndividualProblemProgress from "@/components/progress/IndividualProblemProgress";
 import ProgressParallaxScrollView from "@/components/ProgressParallaxScrollView";
-import ParallaxScrollView from "@/components/ParallaxScrollView";
 import GoToPrize from "@/components/progress/GoToPrize";
+import { getCurrentToken, getCurrentUserId } from "@/constants/apiConfig";
 
 export default function progress() {
   const [selected, setSelected] = useState("Month");
+  const [bearerToken, setBearerToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const today = new Date();
+
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        const token = await getCurrentToken();
+        const id = await getCurrentUserId();
+        setBearerToken(token);
+        setUserId(Number(id));
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        setError("Failed to initialize authentication");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    initializeAuth();
+  }, []);
 
   return (
 
@@ -81,7 +99,7 @@ export default function progress() {
             </View>
           </View>
           <GoToPrize />
-          <IndividualProblemProgress />
+          <IndividualProblemProgress bearerToken={bearerToken} userId={userId} />
         </View>
         <View style={{ height: 150 }}></View>
       </ScrollView>

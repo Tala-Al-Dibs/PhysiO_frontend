@@ -10,7 +10,11 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRouter } from "expo-router";
-import { SPRINGPORT8080, TOKEN } from "@/constants/apiConfig";
+import {
+  SPRINGPORT8080,
+  getCurrentToken,
+  getCurrentUserId,
+} from "@/constants/apiConfig";
 
 const ChangePasswordScreen = () => {
   const [previousPassword, setPreviousPassword] = useState("");
@@ -21,7 +25,8 @@ const ChangePasswordScreen = () => {
   const [previousSecureTextEntry, setPreviousSecureTextEntry] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const API_URL = SPRINGPORT8080 + "/api/";
-  const BEARER_TOKEN = TOKEN;
+  const [bearerToken, setBearerToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
   const router = useRouter();
   const navigation = useNavigation();
 
@@ -30,12 +35,29 @@ const ChangePasswordScreen = () => {
   }, [navigation]);
 
   useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        const token = await getCurrentToken();
+        const id = await getCurrentUserId();
+        setBearerToken(token);
+        setUserId(Number(id)); // Convert to number if needed
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+      }
+    };
+
+    initializeAuth();
+  }, []);
+
+  useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch(`${API_URL}users/1`, {
+        if (!bearerToken || !userId) return;
+
+        const response = await fetch(`${API_URL}users/${userId}`, {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${BEARER_TOKEN}`,
+            Authorization: `Bearer ${bearerToken}`,
             "Content-Type": "application/json",
           },
         });
@@ -45,28 +67,32 @@ const ChangePasswordScreen = () => {
         }
 
         const data = await response.json();
-        setUser(data); // Set the user state
+        setUser(data);
       } catch (error) {
         console.error("Failed to fetch user:", error);
       }
     };
 
     fetchUser();
-  }, []);
+  }, [bearerToken, userId]); // Add dependencies
 
   const handleChangePassword = async () => {
     try {
+      if (!bearerToken || !userId) {
+        throw new Error("Authentication token or user ID is missing.");
+      }
+
       if (!user?.userID) {
         throw new Error("User ID is missing.");
       }
-
+      // Step 1: Validate previous password
       // Step 1: Validate previous password
       const validateResponse = await fetch(
         `${API_URL}users/validate-password`,
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${BEARER_TOKEN}`,
+            Authorization: `Bearer ${bearerToken}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -76,9 +102,8 @@ const ChangePasswordScreen = () => {
         }
       );
 
-      const validateData = await validateResponse.json(); // Parse JSON response
-
       if (!validateResponse.ok) {
+        const validateData = await validateResponse.json();
         throw new Error(
           validateData.message || "Previous password is incorrect."
         );
@@ -88,26 +113,24 @@ const ChangePasswordScreen = () => {
         throw new Error("New password and confirm password do not match.");
       }
 
-      // Step 3: Update password using the updateUser endpoint
-      const updateResponse = await fetch(`${API_URL}users/${user.userID}`, {
+      // Step 3: Update password
+      const updateResponse = await fetch(`${API_URL}users/${userId}`, {
         method: "PUT",
         headers: {
-          Authorization: `Bearer ${BEARER_TOKEN}`,
+          Authorization: `Bearer ${bearerToken}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          username: user.username, // Keep the username unchanged
-          password: newPassword, // Update the password
+          username: user.username,
+          password: newPassword,
         }),
       });
 
-      const updateData = await updateResponse.json(); // Parse JSON response
-
       if (!updateResponse.ok) {
+        const updateData = await updateResponse.json();
         throw new Error(updateData.message || "Failed to update password.");
       }
 
-      // Success message
       Alert.alert("Success", "Your password has been updated successfully.");
       router.push("../(tabs)/profile");
     } catch (error) {

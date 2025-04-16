@@ -9,13 +9,11 @@ import {
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { ProgressChart } from "react-native-chart-kit";
-import { SPRINGPORT8080, TOKEN, USERID } from "@/constants/apiConfig";
+import { SPRINGPORT8080, getCurrentToken, getCurrentUserId } from "@/constants/apiConfig";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { ProblemColors } from "@/constants/Colors";
 import { useRouter } from "expo-router";
 
-const token = TOKEN;
-const userID = USERID;
 const api_problem = SPRINGPORT8080 + "/api/problems";
 const api_progress = SPRINGPORT8080 + "/api/progresses";
 
@@ -44,6 +42,24 @@ const ProgressRing = ({ type }: any) => {
     colors: [],
   });
 
+  const [bearerToken, setBearerToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
+
+  // Initialize authentication
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        const token = await getCurrentToken();
+        const id = await getCurrentUserId();
+        setBearerToken(token);
+        setUserId(Number(id));
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+      }
+    };
+    initializeAuth();
+  }, []);
+
   // Function to convert hex color to RGBA with opacity
   const hexToRgba = (hex: string, opacity: number) => {
     // Remove the '#' if it's there
@@ -56,39 +72,47 @@ const ProgressRing = ({ type }: any) => {
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   };
 
+
   useEffect(() => {
     const fetchUserProblemsAndProgress = async () => {
       try {
+        if (!bearerToken || !userId) return;
+
+        // Fetch user problems
         const problemsResponse = await fetch(
-          `${api_problem}/user/${userID}/problems`,
+          `${SPRINGPORT8080}/api/problems/user/${userId}/problems`,
           {
             method: "GET",
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${bearerToken}`,
               "Content-Type": "application/json",
             },
           }
         );
 
-        if (!problemsResponse.ok) throw new Error("Failed to fetch problems");
+        if (!problemsResponse.ok) {
+          throw new Error(`Failed to fetch problems: ${problemsResponse.status}`);
+        }
 
         const problems = (await problemsResponse.json()) as Problem[];
-
         const problemNames = problems.map((problem) => problem.name);
         const problemIDs = problems.map((problem) => problem.problemID);
 
+        // Fetch daily progress
         const progressResponse = await fetch(
-          `${api_progress}/${userID}/daily`,
+          `${SPRINGPORT8080}/api/progresses/${userId}/daily`,
           {
             method: "GET",
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${bearerToken}`,
               "Content-Type": "application/json",
             },
           }
         );
 
-        if (!progressResponse.ok) throw new Error("Failed to fetch progress");
+        if (!progressResponse.ok) {
+          throw new Error(`Failed to fetch progress: ${progressResponse.status}`);
+        }
 
         const progressData = (await progressResponse.json()) as ProgressEntry[];
 
@@ -114,7 +138,7 @@ const ProgressRing = ({ type }: any) => {
     };
 
     fetchUserProblemsAndProgress();
-  }, [userID, token]);
+  }, [bearerToken, userId]); // Run when token or userId changes
 
   return (
     <View style={styles.container}>

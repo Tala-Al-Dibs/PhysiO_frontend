@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { CountdownCircleTimer } from "react-native-countdown-circle-timer";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { SPRINGPORT8080, TOKEN } from "@/constants/apiConfig";
+import { SPRINGPORT8080, getCurrentToken, getCurrentUserId } from "@/constants/apiConfig";
 import { FontAwesome6 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
@@ -22,12 +22,27 @@ const ExerciseSession: React.FC = () => {
   const [key, setKey] = useState(0); // Key to reset the timer
   const router = useRouter();
   const navigation = useNavigation();
-
+  const [bearerToken, setBearerToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
   const currentExercise = parsedExercises[currentExerciseIndex];
   const nextExercise = parsedExercises[currentExerciseIndex + 1]; // Get the next exercise
   React.useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
+
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        const token = await getCurrentToken();
+        const id = await getCurrentUserId();
+        setBearerToken(token);
+        setUserId(Number(id));
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+      }
+    };
+    initializeAuth();
+  }, []);
 
   const motivationalMessages = [
     "Time for a Rest",
@@ -62,7 +77,10 @@ const ExerciseSession: React.FC = () => {
     setKey((prevKey) => prevKey + 1); // Reset the timer
   }, [isBreak, currentExerciseIndex, parsedExercises.length, router]);
 
+
   const updateProgress = async () => {
+    if (!bearerToken || !progressID) return;
+
     try {
       const completedExercises = currentExerciseIndex + (isBreak ? 0 : 1);
       const response = await fetch(
@@ -70,7 +88,7 @@ const ExerciseSession: React.FC = () => {
         {
           method: "PUT",
           headers: {
-            Authorization: `Bearer ${TOKEN}`,
+            Authorization: `Bearer ${bearerToken}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ percentag: completedExercises }),
@@ -78,12 +96,10 @@ const ExerciseSession: React.FC = () => {
       );
 
       if (!response.ok) {
-        throw new Error(
-          `Failed to update progress. Status: ${response.status}`
-        );
+        throw new Error(`Failed to update progress: ${response.status}`);
       }
     } catch (err) {
-      console.error(err);
+      console.error("Error updating progress:", err);
     }
   };
 

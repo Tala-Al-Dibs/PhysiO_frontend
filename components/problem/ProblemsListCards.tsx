@@ -1,11 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import React from "react";
-import ExploreIcon from "../svgIcons/bottomBar/ExploreIcon";
-import homeIcon from "../svgIcons/bottomBar/HomeIcon";
-import ProfileIcon from "../svgIcons/bottomBar/ProfileIcon";
-import ProgressIcon from "../svgIcons/bottomBar/ProgressIcon";
-import { Feather, MaterialIcons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import IconComponent from "../svgIcons/problems/IconComponent";
 

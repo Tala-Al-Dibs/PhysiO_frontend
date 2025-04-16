@@ -1,14 +1,8 @@
 import { Tabs } from "expo-router";
 import React from "react";
-import { Platform } from "react-native";
 
 import { HapticTab } from "@/components/HapticTab";
-import { IconSymbol } from "@/components/ui/IconSymbol";
 import TabBarBackground from "@/components/ui/TabBarBackground";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
-// import "D:/A Graduation Project/cam-app/global.css"
-import { AntDesign } from "@expo/vector-icons";
 import HomeIcon from "@/components/svgIcons/bottomBar/HomeIcon";
 import ExploreIcon from "@/components/svgIcons/bottomBar/ExploreIcon";
 import ProgressIcon from "@/components/svgIcons/bottomBar/ProgressIcon";
@@ -16,8 +10,6 @@ import ProfileIcon from "@/components/svgIcons/bottomBar/ProfileIcon";
 import ScanIconBar from "@/components/svgIcons/bottomBar/ScanIconBar";
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{

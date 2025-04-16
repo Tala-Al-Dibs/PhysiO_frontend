@@ -1,7 +1,7 @@
 import { View, Text, ImageBackground, StyleSheet } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { SPRINGPORT8080, TOKEN, USERID } from "@/constants/apiConfig";
+import { SPRINGPORT8080, getCurrentToken, getCurrentUserId } from "@/constants/apiConfig";
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -32,32 +32,61 @@ const ProgressHeader = ({ style }: { style?: object }) => {
   const [currentQuote, setCurrentQuote] = useState(motivationalQuotes[0]);
   const [streak, setStreak] = useState(0);
   const [currentDayProgress, setCurrentDayProgress] = useState(false);
+  const [bearerToken, setBearerToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
+
+    // Initialize auth
+    useEffect(() => {
+      const initializeAuth = async () => {
+        try {
+          const token = await getCurrentToken();
+          const id = await getCurrentUserId();
+          setBearerToken(token);
+          setUserId(Number(id));
+        } catch (error) {
+          console.error("Error initializing auth:", error);
+        }
+      };
+      initializeAuth();
+    }, []);
 
   // Fetch streak data
   useEffect(() => {
     const fetchStreakData = async () => {
       try {
-        // Check if user has progress today
+        if (!bearerToken || !userId) return;
+
+         // Check if user has progress today
         const todayResponse = await fetch(
-          `${SPRINGPORT8080}/api/progresses/${USERID}/daily`,
+          `${SPRINGPORT8080}/api/progresses/${userId}/daily`,
           {
             headers: {
-              Authorization: `Bearer ${TOKEN}`,
+              Authorization: `Bearer ${bearerToken}`,
             },
           }
         );
+
+        if (!todayResponse.ok) {
+          throw new Error("Failed to fetch today's progress");
+        }
+
         const todayData = await todayResponse.json();
         setCurrentDayProgress(todayData.length > 0);
 
-        // Get all progress dates this month
+         // Get all progress dates this month
         const monthResponse = await fetch(
-          `${SPRINGPORT8080}/api/progresses/${USERID}/month`,
+          `${SPRINGPORT8080}/api/progresses/${userId}/month`,
           {
             headers: {
-              Authorization: `Bearer ${TOKEN}`,
+              Authorization: `Bearer ${bearerToken}`,
             },
           }
         );
+        
+        if (!monthResponse.ok) {
+          throw new Error("Failed to fetch monthly progress");
+        }
+
         const progressDates = await monthResponse.json();
 
         // Calculate current streak
@@ -97,7 +126,7 @@ const ProgressHeader = ({ style }: { style?: object }) => {
     }, 60000);
 
     return () => clearInterval(quoteInterval);
-  }, [currentQuote]);
+  }, [bearerToken, userId]); // Only run when these change
 
   return (
     <ImageBackground
@@ -115,14 +144,7 @@ const ProgressHeader = ({ style }: { style?: object }) => {
           </Text>
         </View>
 
-        {/* Motivational Quote */}
         <View style={styles.quoteContainer}>
-          {/* <Ionicons
-            name={currentQuote.icon}
-            size={24}
-            color={currentQuote.color}
-            style={styles.quoteIcon}
-          /> */}
           <Text style={styles.quoteText}>{currentQuote.text}</Text>
         </View>
       </View>

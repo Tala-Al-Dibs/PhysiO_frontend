@@ -1,14 +1,13 @@
 import {
   View,
   Text,
-  FlatList,
   StyleSheet,
   Image,
   TouchableOpacity,
 } from "react-native";
 import React, { useLayoutEffect } from "react";
 import { useLocalSearchParams } from "expo-router";
-import { Feather, MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import ProblemsListCards from "@/components/problem/ProblemsListCards";
@@ -16,11 +15,6 @@ import {
   ProblemFound,
   ProblemNotFound,
 } from "@/components/svgIcons/problems/problemResult";
-import { FASTAPIPORT8000, SPRINGPORT8080, TOKEN } from "@/constants/apiConfig";
-
-const API_URL = SPRINGPORT8080 + "/api/problems/user"; // Replace with your actual API base URL
-const USER_ID = 1; // Replace with the dynamic user ID
-const ngrokLink = FASTAPIPORT8000;
 
 export default function Report() {
   const { problems, image_url } = useLocalSearchParams();
