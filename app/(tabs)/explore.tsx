@@ -73,7 +73,7 @@ const explore: React.FC = () => {
   const fetchUserProblems = async () => {
     try {
       const response = await fetch(
-        `${API_URL}/problems/${DUMMY_USER_ID}/problems`,
+        `${API_URL}/problems/user/${DUMMY_USER_ID}/problems`,
         {
           method: "GET",
           headers: {
@@ -82,14 +82,17 @@ const explore: React.FC = () => {
           },
         }
       );
-
       if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error details:", errorData);
         throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
+      console.log("User problems data:", data);
       setUserProblems(data);
     } catch (error) {
+      console.error("Failed to fetch user problems:", error);
       setUserProblems([]);
     }
   };
@@ -271,6 +274,12 @@ const explore: React.FC = () => {
         });
       } else {
         addToLatestSearches(item.name);
+        router.push({
+          pathname: "../(problem)/problem",
+          params: {
+            problem: item.name,
+          },
+        });
       }
     };
 
