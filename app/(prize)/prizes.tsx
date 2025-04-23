@@ -9,8 +9,8 @@ import {
   TouchableOpacity,
 } from "react-native";
 import React, { useEffect, useState } from "react";
-import { FontAwesome5, Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { SPRINGPORT8080, TOKEN, USERID } from "@/constants/apiConfig";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { SPRINGPORT8080, getCurrentToken, getCurrentUserId } from "@/constants/apiConfig";
 import IconComponent from "@/components/svgIcons/problems/ProblemsIconsWithColor";
 import {
   PremiumPrize,
@@ -20,8 +20,6 @@ import {
 } from "@/components/svgIcons/prize/PrizeIcons";
 import { ImageBackground } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-
-// import PrizesHeaderImage from "../../assets/images/Prizes-header-image.png";
 
 interface Prize {
   prizeID: number;
@@ -44,24 +42,47 @@ export default function Prizes() {
   const [error, setError] = useState<string | null>(null);
   const fadeAnim = useState(new Animated.Value(0))[0];
   const navigation = useNavigation();
+  const [bearerToken, setBearerToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
   React.useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
   useEffect(() => {
-    const fetchPrizes = async () => {
+    const initializeAuth = async () => {
       try {
+        const token = await getCurrentToken();
+        const id = await getCurrentUserId();
+        setBearerToken(token);
+        setUserId(Number(id));
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        setError("Failed to initialize authentication");
+        setLoading(false);
+      }
+    };
+    initializeAuth();
+  }, []);
+
+   useEffect(() => {
+    const fetchPrizes = async () => {
+      if (!bearerToken || !userId) return;
+
+      try {
+        setLoading(true);
+        setError(null);
+
         const response = await fetch(
-          `${SPRINGPORT8080}/api/prizes/user/${USERID}`,
+          `${SPRINGPORT8080}/api/prizes/user/${userId}`,
           {
             headers: {
-              Authorization: `Bearer ${TOKEN}`,
+              Authorization: `Bearer ${bearerToken}`,
             },
           }
         );
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`Failed to fetch prizes: ${response.status}`);
         }
 
         const data = await response.json();
@@ -87,7 +108,7 @@ export default function Prizes() {
     };
 
     fetchPrizes();
-  }, []);
+  }, [bearerToken, userId, fadeAnim]);
 
   const getMedalIcon = (type: string) => {
     const iconSize = 24;

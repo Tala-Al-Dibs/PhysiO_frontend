@@ -4,9 +4,10 @@ import {
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import React, { useEffect, useState } from "react";
-import { SPRINGPORT8080, TOKEN, USERID } from "@/constants/apiConfig";
+import { SPRINGPORT8080 } from "@/constants/apiConfig";
 import IconComponent from "../svgIcons/problems/ProblemsIconsWithColor";
 import { ProblemColors } from "@/constants/Colors";
 import { useRouter } from "expo-router";
@@ -14,7 +15,6 @@ import { useRouter } from "expo-router";
 interface Problem {
   problemID: number;
   name: string;
-  // Add other properties if needed
 }
 
 interface Progress {
@@ -24,35 +24,50 @@ interface Progress {
   // Add other properties if needed
 }
 
-const IndividualProblemProgress = () => {
+interface IndividualProblemProgressProps {
+  bearerToken: string | null;
+  userId: number | null;
+}
+
+const IndividualProblemProgress = ({
+  bearerToken,
+  userId,
+}: IndividualProblemProgressProps) => {
   const [progressData, setProgressData] = useState<Progress[]>([]);
   const [userProblems, setUserProblems] = useState<Problem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-
-  const token = TOKEN;
-  const userID = USERID;
   const api_problem = `${SPRINGPORT8080}/api/problems`;
   const api_progress = `${SPRINGPORT8080}/api/progresses`;
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        if (!bearerToken || !userId) {
+          setError("Authentication required");
+          setLoading(false);
+          return;
+        }
+
+        setLoading(true);
+        setError(null);
+
         // Fetch user's problems
         const problemsResponse = await fetch(
-          `${api_problem}/user/${userID}/problems`,
+          `${api_problem}/user/${userId}/problems`,
           {
             method: "GET",
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${bearerToken}`,
               "Content-Type": "application/json",
             },
           }
         );
 
         if (!problemsResponse.ok) {
-          throw new Error("Failed to fetch user problems");
+          const errorData = await problemsResponse.json();
+          throw new Error(errorData.message || "Failed to fetch user problems");
         }
 
         const problemsData = await problemsResponse.json();
@@ -60,24 +75,27 @@ const IndividualProblemProgress = () => {
 
         // Fetch today's progress
         const progressResponse = await fetch(
-          `${api_progress}/${userID}/daily`,
+          `${api_progress}/${userId}/daily`,
           {
             method: "GET",
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${bearerToken}`,
               "Content-Type": "application/json",
             },
           }
         );
 
         if (!progressResponse.ok) {
-          throw new Error("Failed to fetch today's progress");
+          const errorData = await progressResponse.json();
+          throw new Error(
+            errorData.message || "Failed to fetch today's progress"
+          );
         }
 
         const progressData = await progressResponse.json();
         setProgressData(progressData);
       } catch (err) {
-        // Properly type the error
+        console.error("Fetch error:", err);
         if (err instanceof Error) {
           setError(err.message);
         } else {
@@ -88,8 +106,10 @@ const IndividualProblemProgress = () => {
       }
     };
 
-    fetchData();
-  }, []);
+    if (bearerToken && userId) {
+      fetchData();
+    }
+  }, [bearerToken, userId]); // Add dependencies
 
   // Combine progress data with all user problems to show 0% for problems without progress
   const getCombinedProgress = () => {
@@ -130,16 +150,24 @@ const IndividualProblemProgress = () => {
         <TouchableOpacity
           key={index}
           style={styles.card}
-          onPress={() =>
-            router.push({
-              pathname: "/problemProgress",
-              params: {
-                problem: item.problem,
-                problemID: userProblems.find((p) => p.name === item.problem)
-                  ?.problemID,
-              },
-            })
-          }
+          onPress={() => {
+            const problemId = userProblems.find(
+              (p) => p.name === item.problem
+            )?.problemID;
+            if (problemId) {
+              router.push({
+                pathname: "/problemProgress", // Adjusted path
+                params: {
+                  problem: item.problem,
+                  problemID: problemId,
+                  color: item.color, // Pass the color if needed
+                },
+              });
+            } else {
+              console.error("Problem ID not found for:", item.problem);
+              Alert.alert("Error", "Could not open this problem");
+            }
+          }}
         >
           <View style={styles.iconContainer}>
             <IconComponent problem={item.problem} />
