@@ -13,13 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
 import ProblemsListCards from "@/components/problem/ProblemsListCards";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  clearAuthData,
-  getUserId,
-  removeToken,
-  removeUserId,
-} from "@/constants/auth"; // Add these to your auth.ts
+import { clearAuthData, getUserId } from "@/constants/auth"; // Add these to your auth.ts
 import { SPRINGPORT8080, getCurrentToken } from "@/constants/apiConfig";
 
 export default function ProfileScreen() {
