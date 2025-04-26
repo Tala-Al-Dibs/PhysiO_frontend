@@ -15,10 +15,9 @@ import Schedule from "@/components/Physiotherapists/Schedule";
 import DetailsContainer from "@/components/Physiotherapists/DetailsContainer";
 import { Physiotherapist } from "@/components/expolre/types/types";
 import { LinearGradient } from "expo-linear-gradient";
-import { SPRINGPORT8080, TOKEN } from "@/constants/apiConfig";
+import { SPRINGPORT8080, getCurrentToken } from "@/constants/apiConfig";
 
 const API_URL = SPRINGPORT8080 + "/api";
-const BEARER_TOKEN = TOKEN;
 
 export default function PhysiotherapistDetails() {
   const { physiotherapistID } = useLocalSearchParams<{
@@ -29,6 +28,21 @@ export default function PhysiotherapistDetails() {
     useState<Physiotherapist | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [bearerToken, setBearerToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        const token = await getCurrentToken();
+        setBearerToken(token);
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        setError("Failed to initialize authentication");
+        setLoading(false);
+      }
+    };
+    initializeAuth();
+  }, []);
 
   useEffect(() => {
     navigation.setOptions({
@@ -36,36 +50,49 @@ export default function PhysiotherapistDetails() {
     });
 
     const fetchPhysiotherapistDetails = async () => {
+      if (!bearerToken || !physiotherapistID) return;
+
       try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch physiotherapist details
         const response = await fetch(
-          `${API_URL}/physiotherapists/${physiotherapistID}`,
+          `${SPRINGPORT8080}/api/physiotherapists/${physiotherapistID}`,
           {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${BEARER_TOKEN}`,
+              Authorization: `Bearer ${bearerToken}`,
             },
           }
         );
 
-        if (!response.ok)
-          throw new Error(`HTTP error! Status: ${response.status}`);
+        if (!response.ok) {
+          throw new Error(
+            `Failed to fetch physiotherapist: ${response.status}`
+          );
+        }
 
         const data = await response.json();
 
+        // Fetch working hours
         const workingHoursResponse = await fetch(
-          `${API_URL}/physiotherapists/${physiotherapistID}/working-hours`,
+          `${SPRINGPORT8080}/api/physiotherapists/${physiotherapistID}/working-hours`,
           {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${BEARER_TOKEN}`,
+              Authorization: `Bearer ${bearerToken}`,
             },
           }
         );
 
-        if (!workingHoursResponse.ok)
-          throw new Error(`HTTP error! Status: ${workingHoursResponse.status}`);
+        if (!workingHoursResponse.ok) {
+          throw new Error(
+            `Failed to fetch working hours: ${workingHoursResponse.status}`
+          );
+        }
 
         const workingHoursData = await workingHoursResponse.json();
         setPhysiotherapist({ ...data, workingHours: workingHoursData });
@@ -80,7 +107,7 @@ export default function PhysiotherapistDetails() {
     };
 
     fetchPhysiotherapistDetails();
-  }, [physiotherapistID]);
+  }, [physiotherapistID, bearerToken, navigation]);
 
   if (loading) {
     return (

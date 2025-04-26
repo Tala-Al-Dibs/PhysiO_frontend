@@ -5,21 +5,40 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { SPRINGPORT8080, TOKEN, USERID } from "@/constants/apiConfig";
+import { SPRINGPORT8080, getCurrentToken, getCurrentUserId } from "@/constants/apiConfig";
 
 const ProgressCalender = () => {
   const today = new Date();
   const todayStr = today.toISOString().split("T")[0]; // Ensure consistency
   const [markedDates, setMarkedDates] = useState<{ [key: string]: any }>({});
   const api_progress = SPRINGPORT8080 + "/api/progresses";
+  const [bearerToken, setBearerToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        const token = await getCurrentToken();
+        const id = await getCurrentUserId();
+        setBearerToken(token);
+        setUserId(Number(id));
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+      }
+    };
+    
+    initializeAuth();
+  }, []);
 
   useEffect(() => {
     const fetchProgressDays = async () => {
       try {
-        const response = await fetch(`${api_progress}/${USERID}/month`, {
+    if (!bearerToken || !userId) return;
+
+        const response = await fetch(`${api_progress}/${userId}/month`, {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${TOKEN}`,
+            Authorization: `Bearer ${bearerToken}`,
             "Content-Type": "application/json",
           },
         });

@@ -8,6 +8,7 @@ import {
   StyleSheet,
   ImageBackground,
   Pressable,
+  ActivityIndicator,
 } from "react-native";
 import React, { useRef, useState } from "react";
 import { useRouter } from "expo-router";
@@ -17,17 +18,13 @@ import {
 } from "react-native-responsive-screen";
 import CustomKeyboardView from "@/components/CustomKeyboardView";
 import { StatusBar } from "expo-status-bar";
-import {
-  Feather,
-  FontAwesome6,
-  MaterialCommunityIcons,
-  Octicons,
-} from "@expo/vector-icons";
+import {Feather} from "@expo/vector-icons";
 import "../../global.css";
 import GoogleLogo from "@/components/svgIcons/signin-signup/GoogleLogo";
 import { useNavigation } from "@react-navigation/native";
 import LogoSvg from "@/components/svgIcons/logo/LogoSvg";
-import { useAuth } from "../context/AuthContextType";
+import { getSpringPort } from "@/constants/apiConfig";
+import { storeToken, storeUserId } from "@/constants/auth";
 
 export default function SignUp() {
   const router = useRouter();
@@ -39,19 +36,86 @@ export default function SignUp() {
   React.useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
-  const { login, googleLogin } = useAuth();
-
-  const handleGoogleLogin = () => {
-    googleLogin();
-  };
 
   const handleRegister = async () => {
-    if (!userRef.current || !passwordRef.current) {
-      Alert.alert("Sign In", "Please fill all the fields");
+    if (!userRef.current) {
+      Alert.alert("Sign Up", "Please enter a username");
       return;
     }
-
-    //login process
+    
+    if (!passwordRef.current) {
+      Alert.alert("Sign Up", "Please enter a password");
+      return;
+    }
+  
+    // Basic password validation
+    if (passwordRef.current.length < 6) {
+      Alert.alert("Sign Up", "Password must be at least 6 characters");
+      return;
+    }
+  
+    setLoading(true);
+  
+    try {
+      const apiUrl = await getSpringPort();
+      
+      // Signup request
+      const signupResponse = await fetch(`${apiUrl}/api/auth/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: userRef.current,
+          password: passwordRef.current,
+        }),
+      });
+  
+      if (!signupResponse.ok) {
+        const errorData = await signupResponse.json();
+        const errorMessage = errorData.message || "Registration failed";
+        Alert.alert("Sign Up Failed", errorMessage);
+        return; 
+      }
+  
+      const loginResponse = await fetch(`${apiUrl}/api/auth/signin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: userRef.current,
+          password: passwordRef.current,
+        }),
+      });
+  
+      if (!loginResponse.ok) {
+        const errorData = await loginResponse.json();
+        Alert.alert("Login Failed", errorData.message || "Automatic login failed");
+        return;
+      }
+  
+      const { accessToken, id } = await loginResponse.json();
+      
+      // Store credentials
+      await Promise.all([
+        storeToken(accessToken),
+        storeUserId(id.toString()),
+      ]);
+  
+      // Navigate to main app
+      router.replace("/(tabs)");
+      
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      
+      let errorMessage = "An error occurred during registration";
+      if (error.message.includes("username is already taken")) {
+        errorMessage = "Username is already taken";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert("Registration Error", errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -154,9 +218,82 @@ export default function SignUp() {
                     >
                       Sign Up
                     </Text>
+              <View className="flex-1 gap-2 pl-2">
+                <Text
+                  style={{ fontSize: hp(5), color: "#0B96AA" }}
+                  className="font-bold tracking-wider text-start "
+                >
+                  Ya Hala!
+                </Text>
+                <Text
+                  style={{ fontSize: hp(2), color: "#383838" }}
+                  className="font-light tracking-wider text-start "
+                >
+                  Join us by filling the form!
+                </Text>
+              </View>
+              {/* inputs */}
+              <View className="gap-4 flex-1">
+                <View
+                  style={{ height: hp(7) }}
+                  className="flex-row gap-4 px-4 bg-neutral-100 items-center rounded-2xl"
+                >
+                  <Feather name="user" size={hp(2.7)} color="gray" />
+                  <TextInput
+                    onChange={(e) => (userRef.current = e.nativeEvent.text)}
+                    style={{ fontSize: hp(2) }}
+                    className="flex-1 font-semibold text-neutral-700"
+                    placeholder="Username"
+                    placeholderTextColor={"gray"}
+                  />
+                </View>
+
+                <View className="gap-3">
+                  <View
+                    style={{ height: hp(7) }}
+                    className="flex-row gap-4 px-4 bg-neutral-100 items-center rounded-2xl"
+                  >
+                    <Feather name="lock" size={hp(2.7)} color="gray" />
+                    <TextInput
+                      secureTextEntry={!passwordVisible}
+                      onChange={(e) =>
+                        (passwordRef.current = e.nativeEvent.text)
+                      }
+                      style={{ fontSize: hp(2) }}
+                      className="flex-1 font-semibold text-neutral-700"
+                      placeholder="Password"
+                      placeholderTextColor={"gray"}
+                    />
+                    <TouchableOpacity
+                      onPress={() => setPasswordVisible(!passwordVisible)}
+                    >
+                      <Feather
+                        name={passwordVisible ? "eye" : "eye-off"}
+                        size={hp(2.7)}
+                        color="gray"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View>
+                  <TouchableOpacity
+                    onPress={handleRegister}
+                    style={[{ height: hp(6.5) }, styles.SignInButton]}
+                    className="rounded-xl justify-center items-center"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="white" />
+                    ) : (
+                      <Text
+                        style={{ fontSize: hp(2.7) }}
+                        className="text-white font-bold tracking-wider"
+                      >
+                        Sign Up
+                      </Text>
+                    )}
                   </TouchableOpacity>
-                  {/* )
-                } */}
                 </View>
 
                 {/* signup text */}
@@ -197,11 +334,7 @@ export default function SignUp() {
                 />
               </View>
             </View>
-
-            <TouchableOpacity
-              className="flex-row justify-center pt-10"
-              onPress={handleGoogleLogin}
-            >
+            <TouchableOpacity className="flex-row justify-center pt-10">
               <GoogleLogo />
             </TouchableOpacity>
           </View>

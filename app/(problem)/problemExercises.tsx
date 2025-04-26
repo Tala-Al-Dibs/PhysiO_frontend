@@ -9,17 +9,12 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { FASTAPIPORT8000, SPRINGPORT8080, TOKEN } from "@/constants/apiConfig";
+import { SPRINGPORT8080, getCurrentToken, getCurrentUserId, FASTAPIPORT8000 } from "@/constants/apiConfig";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { useNavigation } from "@react-navigation/native";
-import { Entypo, MaterialIcons, Octicons } from "@expo/vector-icons";
+import { MaterialIcons, Octicons } from "@expo/vector-icons";
 import IconComponent from "@/components/svgIcons/problems/IconComponent";
-import {
-  CausesIcon,
-  PhysiotherapistIcon,
-  PreventionsIcon,
-  SymptomsIcon,
-} from "@/components/svgIcons/problems/ProblemDescriptionIcon";
+import {PhysiotherapistIcon} from "@/components/svgIcons/problems/ProblemDescriptionIcon";
 import {
   DurationSumIcon,
   ExerciseNumberIcon,
@@ -35,7 +30,6 @@ interface Exercise {
 }
 
 export default function ProblemExercise() {
-  const userID = 1;
   const { problem, progressID } = useLocalSearchParams(); // Get problem name from URL
   const problemName = Array.isArray(problem) ? problem[0] : problem;
   const [problemData, setProblemData] = useState<any>(null);
@@ -43,6 +37,8 @@ export default function ProblemExercise() {
   const [progressSize, setProgressSize] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [bearerToken, setBearerToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
   const navigation = useNavigation();
   const route = useRouter();
   React.useLayoutEffect(() => {
@@ -50,23 +46,40 @@ export default function ProblemExercise() {
   }, [navigation]);
 
   useEffect(() => {
-    const fetchProblemDetails = async () => {
+    const initializeAuth = async () => {
       try {
+        const token = await getCurrentToken();
+        const id = await getCurrentUserId();
+        setBearerToken(token);
+        setUserId(Number(id));
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        setError("Failed to initialize authentication");
+        setLoading(false);
+      }
+    };
+    initializeAuth();
+  }, []);
+
+  useEffect(() => {
+     const fetchProblemDetails = async () => {
+      if (!bearerToken || !problemName) return;
+
+      try {
+        setLoading(true);
         const response = await fetch(
-          `${API_URL}${encodeURIComponent(problemName)}`,
+          `${SPRINGPORT8080}/api/problems/name/${encodeURIComponent(problemName)}`,
           {
             method: "GET",
             headers: {
-              Authorization: `Bearer ${TOKEN}`,
+              Authorization: `Bearer ${bearerToken}`,
               Accept: "application/json",
             },
           }
         );
 
         if (!response.ok) {
-          throw new Error(
-            `Failed to fetch problem details. Status: ${response.status}`
-          );
+          throw new Error(`Failed to fetch problem details: ${response.status}`);
         }
 
         const data = await response.json();
@@ -81,72 +94,77 @@ export default function ProblemExercise() {
     };
 
     fetchProblemDetails();
-  }, [problem]);
+  }, [problemName, bearerToken]);
 
   useEffect(() => {
-    if (!progressID) return;
+    if (!bearerToken || !progressID) return;
 
     const fetchExercises = async () => {
       try {
+        setLoading(true);
         const response = await fetch(
-          `${API_PROGRESS_EXERCISES}${progressID}/exercises`,
+          `${SPRINGPORT8080}/api/progresses/${progressID}/exercises`,
           {
             method: "GET",
             headers: {
-              Authorization: `Bearer ${TOKEN}`,
+              Authorization: `Bearer ${bearerToken}`,
               Accept: "application/json",
             },
           }
         );
 
         if (!response.ok) {
-          throw new Error(
-            `Failed to fetch exercises. Status: ${response.status}`
-          );
+          throw new Error(`Failed to fetch exercises: ${response.status}`);
         }
 
         const data = await response.json();
         setExercises(data);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "An unknown error occurred"
+        );
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchExercises();
-  }, [progressID]);
+  }, [progressID, bearerToken]);
 
   useEffect(() => {
-    if (!userID || !problemData) return;
+    if (!bearerToken || !userId || !problemData) return;
 
     const fetchProgress = async () => {
       try {
+        setLoading(true);
         const response = await fetch(
-          `${API_PROGRESS_EXERCISES}user/${userID}/problem/${problemData.problemID}`,
+          `${SPRINGPORT8080}/api/progresses/user/${userId}/problem/${problemData.problemID}`,
           {
             method: "GET",
             headers: {
-              Authorization: `Bearer ${TOKEN}`,
+              Authorization: `Bearer ${bearerToken}`,
               Accept: "application/json",
             },
           }
         );
 
-        if (!response.ok)
-          throw new Error(
-            `Failed to fetch progress. Status: ${response.status}`
-          );
+        if (!response.ok) {
+          throw new Error(`Failed to fetch progress: ${response.status}`);
+        }
 
         const progressList = await response.json();
-        setProgressSize(progressList.length); // Store the size of the list
+        setProgressSize(progressList.length);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "An unknown error occurred"
         );
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchProgress();
-  }, [userID, problemData]);
+  }, [userId, problemData, bearerToken]);
 
   const getWeekAndDay = (size: number | null) => {
     if (size === null) return "Loading progress...";
@@ -224,9 +242,6 @@ export default function ProblemExercise() {
         }
       >
         <ScrollView style={styles.container}>
-          {/* {problemData.image && (
-          <Image source={{ uri: problemData.image.url }} style={styles.image} />
-        )} */}
           <View
             style={{
               flexDirection: "row",

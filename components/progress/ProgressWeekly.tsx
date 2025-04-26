@@ -1,12 +1,9 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import React, { useEffect, useState } from "react";
-import { SPRINGPORT8080, TOKEN, USERID } from "@/constants/apiConfig";
+import { SPRINGPORT8080, getCurrentToken, getCurrentUserId } from "@/constants/apiConfig";
 import { ProblemColors } from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  widthPercentageToDP as wp,
-  heightPercentageToDP as hp,
-} from "react-native-responsive-screen";
+
 const ProgressWeekly = () => {
   const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const problemColors = ProblemColors;
@@ -16,23 +13,44 @@ const ProgressWeekly = () => {
   const [currentWeekData, setCurrentWeekData] = useState<{
     [key: string]: number[];
   }>({});
+  const [bearerToken, setBearerToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
+
+  // Initialize authentication
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        const token = await getCurrentToken();
+        const id = await getCurrentUserId();
+        setBearerToken(token);
+        setUserId(Number(id));
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+      }
+    };
+    initializeAuth();
+  }, []);
 
   // Fetch user problems
   useEffect(() => {
     const fetchUserProblems = async () => {
       try {
+        if (!bearerToken || !userId) return;
+
         const response = await fetch(
-          `${SPRINGPORT8080}/api/problems/user/${USERID}/problems`,
+          `${SPRINGPORT8080}/api/problems/user/${userId}/problems`,
           {
             method: "GET",
             headers: {
-              Authorization: `Bearer ${TOKEN}`,
+              Authorization: `Bearer ${bearerToken}`,
               "Content-Type": "application/json",
             },
           }
         );
 
-        if (!response.ok) throw new Error("Failed to fetch user problems");
+        if (!response.ok) {
+          throw new Error(`Failed to fetch user problems: ${response.status}`);
+        }
 
         const data = await response.json();
         const problemNames = data.map((problem: any) => problem.name);
@@ -43,24 +61,28 @@ const ProgressWeekly = () => {
     };
 
     fetchUserProblems();
-  }, []);
+  }, [bearerToken, userId]);
 
   // Fetch all progress data
   useEffect(() => {
     const fetchAllProgress = async () => {
       try {
+        if (!bearerToken || !userId) return;
+
         const response = await fetch(
-          `${SPRINGPORT8080}/api/progresses/user/${USERID}`,
+          `${SPRINGPORT8080}/api/progresses/user/${userId}`,
           {
             method: "GET",
             headers: {
-              Authorization: `Bearer ${TOKEN}`,
+              Authorization: `Bearer ${bearerToken}`,
               "Content-Type": "application/json",
             },
           }
         );
 
-        if (!response.ok) throw new Error("Failed to fetch progress data");
+        if (!response.ok) {
+          throw new Error(`Failed to fetch progress data: ${response.status}`);
+        }
 
         const data = await response.json();
         setAllProgressData(data);
@@ -72,7 +94,7 @@ const ProgressWeekly = () => {
     if (problems.length > 0) {
       fetchAllProgress();
     }
-  }, [problems]);
+  }, [bearerToken, userId, problems]);
 
   // Calculate current week data based on offset
   useEffect(() => {

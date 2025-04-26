@@ -9,12 +9,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import {
-  FASTAPIPORT8000,
-  SPRINGPORT8080,
-  TOKEN,
-  USERID,
-} from "@/constants/apiConfig";
+import { SPRINGPORT8080, getCurrentToken, getCurrentUserId } from "@/constants/apiConfig";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { useNavigation } from "@react-navigation/native";
 import { MaterialIcons, Octicons } from "@expo/vector-icons";
@@ -26,36 +21,56 @@ import {
 } from "@/components/svgIcons/problems/ProblemDescriptionIcon";
 
 const API_URL = SPRINGPORT8080 + "/api/problems/name/";
-const userID = USERID;
-
 export default function Problem() {
   const { problem } = useLocalSearchParams(); // Get problem name from URL
   const problemName = Array.isArray(problem) ? problem[0] : problem;
   const [problemData, setProblemData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [bearerToken, setBearerToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
   const navigation = useNavigation();
   const route = useRouter();
   React.useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        const token = await getCurrentToken();
+        const id = await getCurrentUserId();
+        setBearerToken(token);
+        setUserId(Number(id));
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        setError("Failed to initialize authentication");
+        setLoading(false);
+      }
+    };
+    initializeAuth();
+  }, []);
+
+
   const handleStartExercise = async () => {
+    if (!bearerToken || !userId || !problemData) return;
+
     try {
+      setLoading(true);
       // Check if the user already has this problem
       const userProblemsResponse = await fetch(
-        `${SPRINGPORT8080}/api/problems/user/${userID}/problems`,
+        `${SPRINGPORT8080}/api/problems/user/${userId}/problems`,
         {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${TOKEN}`,
+            Authorization: `Bearer ${bearerToken}`,
             Accept: "application/json",
           },
         }
       );
 
       if (!userProblemsResponse.ok) {
-        throw new Error("Failed to fetch user's problems.");
+        throw new Error(`Failed to fetch user's problems: ${userProblemsResponse.status}`);
       }
 
       const userProblems = await userProblemsResponse.json();
@@ -66,18 +81,18 @@ export default function Problem() {
       if (!problemExists) {
         // Add problem to user if not already present
         const addProblemResponse = await fetch(
-          `${SPRINGPORT8080}/api/problems/user/${userID}/add-problem/${problemData.problemID}`,
+          `${SPRINGPORT8080}/api/problems/user/${userId}/add-problem/${problemData.problemID}`,
           {
             method: "POST",
             headers: {
-              Authorization: `Bearer ${TOKEN}`,
+              Authorization: `Bearer ${bearerToken}`,
               Accept: "application/json",
             },
           }
         );
 
         if (!addProblemResponse.ok) {
-          throw new Error("Failed to add problem to user.");
+          throw new Error(`Failed to add problem to user: ${addProblemResponse.status}`);
         }
       }
 
@@ -96,22 +111,23 @@ export default function Problem() {
 
   useEffect(() => {
     const fetchProblemDetails = async () => {
+      if (!bearerToken || !problemName) return;
+
       try {
+        setLoading(true);
         const response = await fetch(
-          `${API_URL}${encodeURIComponent(problemName)}`,
+          `${SPRINGPORT8080}/api/problems/name/${encodeURIComponent(problemName)}`,
           {
             method: "GET",
             headers: {
-              Authorization: `Bearer ${TOKEN}`,
+              Authorization: `Bearer ${bearerToken}`,
               Accept: "application/json",
             },
           }
         );
 
         if (!response.ok) {
-          throw new Error(
-            `Failed to fetch problem details. Status: ${response.status}`
-          );
+          throw new Error(`Failed to fetch problem details: ${response.status}`);
         }
 
         const data = await response.json();
@@ -126,7 +142,7 @@ export default function Problem() {
     };
 
     fetchProblemDetails();
-  }, [problem]);
+  }, [problemName, bearerToken]);
 
   if (loading) {
     return (

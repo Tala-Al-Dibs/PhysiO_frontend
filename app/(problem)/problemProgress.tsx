@@ -9,33 +9,47 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { FASTAPIPORT8000, SPRINGPORT8080, TOKEN } from "@/constants/apiConfig";
+import { getCurrentToken, SPRINGPORT8080 } from "@/constants/apiConfig";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { useNavigation } from "@react-navigation/native";
-import { MaterialIcons, Octicons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import IconComponent from "@/components/svgIcons/problems/IconComponent";
-import {
-  CausesIcon,
-  PhysiotherapistIcon,
-  PreventionsIcon,
-  SymptomsIcon,
-} from "@/components/svgIcons/problems/ProblemDescriptionIcon";
+import { PhysiotherapistIcon} from "@/components/svgIcons/problems/ProblemDescriptionIcon";
 
 const API_URL = SPRINGPORT8080 + "/api/problems/name/";
 const API_URL2 = SPRINGPORT8080 + "/api/progresses";
 
 export default function Problem() {
-  const { problem, problemID } = useLocalSearchParams(); // Get problem name from URL
+  const { problem, problemID } = useLocalSearchParams(); 
   const problemName = Array.isArray(problem) ? problem[0] : problem;
   const [problemData, setProblemData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  
   const [error, setError] = useState<string | null>(null);
   const [progressData, setProgressData] = useState<number>(0);
   const navigation = useNavigation();
   const route = useRouter();
+  const [token, setToken] = useState<string>(""); // Added token state
+
   React.useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
+
+  useEffect(() => {
+    const initializeToken = async () => {
+      try {
+        const currentToken = await getCurrentToken();
+        if (currentToken) {
+          setToken(currentToken);
+        } else {
+          setError("Authentication token not available");
+        }
+      } catch (err) {
+        setError("Failed to initialize authentication");
+      }
+    };
+    initializeToken();
+  }, []);
 
   useEffect(() => {
     const fetchProblemDetails = async () => {
@@ -45,7 +59,7 @@ export default function Problem() {
           {
             method: "GET",
             headers: {
-              Authorization: `Bearer ${TOKEN}`,
+              Authorization: `Bearer ${token}`,
               Accept: "application/json",
             },
           }
@@ -72,9 +86,6 @@ export default function Problem() {
   }, [problem]);
 
   useEffect(() => {
-    // console.log(problemID);
-    // console.log("problemData:", problemData);
-
     const fetchProgress = async () => {
       try {
         const response = await fetch(
@@ -82,7 +93,7 @@ export default function Problem() {
           {
             method: "GET",
             headers: {
-              Authorization: `Bearer ${TOKEN}`,
+              Authorization: `Bearer ${token}`,
               Accept: "application/json",
             },
           }
@@ -95,11 +106,20 @@ export default function Problem() {
         }
 
         const data = await response.json();
-        setProgressData(data.length); // Number of days completed
+      
+        // Check if data is an array before accessing .length
+        if (Array.isArray(data)) {
+          setProgressData(data.length);
+        } else {
+          console.error("Unexpected progress data format:", data);
+          setProgressData(0);
+        }
       } catch (err) {
         console.error("Error fetching progress:", err);
+        setError("Failed to load progress data");
       }
     };
+  
 
     fetchProgress();
   }, [problemData]);
@@ -109,7 +129,7 @@ export default function Problem() {
       const response = await fetch(`${API_URL2}/user/1/problem/${problemID}`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${TOKEN}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -291,9 +311,6 @@ export default function Problem() {
         }
       >
         <ScrollView style={styles.container}>
-          {/* {problemData.image && (
-          <Image source={{ uri: problemData.image.url }} style={styles.image} />
-        )} */}
           <View
             style={{
               flexDirection: "row",

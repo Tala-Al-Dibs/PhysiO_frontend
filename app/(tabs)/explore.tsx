@@ -17,17 +17,31 @@ import PhysiotherapistItem from "@/components/expolre/PhysiotherapistItem";
 import SearchBar from "@/components/expolre/SearchBar";
 
 import { Problem, Physiotherapist } from "@/components/expolre/types/types";
-import { router, useRouter } from "expo-router";
-import { SPRINGPORT8080, TOKEN, USERID } from "@/constants/apiConfig";
-
-const API_URL = `${SPRINGPORT8080}/api`;
-const BEARER_TOKEN = TOKEN;
-
-const DUMMY_USER_ID = USERID;
+import { useRouter } from "expo-router";
+import { getSpringPort, getCurrentToken, getCurrentUserId} from "@/constants/apiConfig";
 
 const DUMMY_USER_LOCATION = "BETHLEHEM";
 
 const explore: React.FC = () => {
+  const [API_URL, setAPI_URL] = useState("");
+  const [BEARER_TOKEN, setBEARER_TOKEN] = useState<string | null>(null); 
+  const [DUMMY_USER_ID, setDUMMY_USER_ID] = useState<string | null>(null); // Explicit type
+
+  // Initialize auth data when component mounts
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const springPort = await getSpringPort();
+      setAPI_URL(`${springPort}/api`);
+      
+      const token = await getCurrentToken();
+      setBEARER_TOKEN(token);
+      
+      const userId = await getCurrentUserId();
+      setDUMMY_USER_ID(userId);
+    };
+
+    initializeAuth();
+  }, []);
   const [userProblems, setUserProblems] = useState<Problem[]>([]);
   const [allProblems, setAllProblems] = useState<Problem[]>([]);
   const [physiotherapists, setPhysiotherapists] = useState<Physiotherapist[]>(

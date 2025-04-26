@@ -6,17 +6,19 @@ import {
   Image,
   TouchableOpacity,
   ActivityIndicator,
-  TextInput,
   Linking,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
-import { Ionicons, MaterialIcons, FontAwesome } from "@expo/vector-icons";
-import { SPRINGPORT8080, TOKEN, USERID } from "@/constants/apiConfig";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import {
+  SPRINGPORT8080,
+  getCurrentToken,
+  getCurrentUserId,
+} from "@/constants/apiConfig";
 import PhysioHeader from "@/components/Physiotherapists/physiotherapistsHeader";
 import FilterModal from "@/components/Physiotherapists/FilterModal";
-
 
 interface Physiotherapist {
   physiotherapistID: number;
@@ -48,41 +50,72 @@ export default function PhysiotherapistsN() {
     sortBy: "default",
     maxPrice: 500,
   });
+  const [bearerToken, setBearerToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   React.useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
+  // Initialize auth data
   useEffect(() => {
-    const fetchPhysiotherapists = async () => {
+    const initializeAuth = async () => {
       try {
-        const response = await fetch(
-          `${SPRINGPORT8080}/api/physiotherapists/user/${USERID}/location`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${TOKEN}`,
-              Accept: "application/json",
-            },
-          }
-        );
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        const token = await getCurrentToken();
+        const id = await getCurrentUserId();
+
+        setBearerToken(token);
+        setUserId(id);
+
+        if (token && id) {
+          fetchPhysiotherapists(token, id);
         }
-        const data = await response.json();
-        setPhysiotherapists(data);
       } catch (error) {
-        console.error("Error fetching physiotherapists:", error);
-        setError(
-          error instanceof Error ? error.message : "Unknown error occurred"
-        );
-      } finally {
-        setLoading(false);
+        console.error("Error initializing auth:", error);
+        setError("Failed to initialize authentication");
       }
     };
 
-    fetchPhysiotherapists();
+    initializeAuth();
   }, []);
+
+  const fetchPhysiotherapists = async (token: string, userId: string) => {
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `${SPRINGPORT8080}/api/physiotherapists/user/${userId}/location`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setPhysiotherapists(data);
+      setError(null);
+    } catch (error) {
+      console.error("Error fetching physiotherapists:", error);
+      setError(
+        error instanceof Error ? error.message : "Unknown error occurred"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add refresh functionality if needed
+  const onRefresh = async () => {
+    if (bearerToken && userId) {
+      await fetchPhysiotherapists(bearerToken, userId);
+    }
+  };
 
   const applyFilters = () => {
     let filtered = [...physiotherapists];

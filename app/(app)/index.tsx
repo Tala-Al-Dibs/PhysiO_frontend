@@ -17,15 +17,12 @@ import {
 } from "react-native-responsive-screen";
 import CustomKeyboardView from "@/components/CustomKeyboardView";
 import { StatusBar } from "expo-status-bar";
-import {
-  Feather,
-  FontAwesome6,
-  MaterialCommunityIcons,
-  Octicons,
-} from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import "../../global.css";
 import GoogleLogo from "@/components/svgIcons/signin-signup/GoogleLogo";
 import LogoSvg from "@/components/svgIcons/logo/LogoSvg";
+import { storeToken, storeUserId } from "@/constants/auth";
+import { getCurrentToken, getSpringPort } from "@/constants/apiConfig";
 
 export default function IntroScreen() {
   const router = useRouter();
@@ -34,13 +31,55 @@ export default function IntroScreen() {
   const [loading, setLoading] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
 
-  const handleRegister = async () => {
+  const handleSignIn = async () => {
     if (!userRef.current || !passwordRef.current) {
       Alert.alert("Sign In", "Please fill all the fields");
       return;
     }
 
-    //login process
+    setLoading(true);
+
+    try {
+      const apiUrl = await getSpringPort(); // Use your getSpringPort function
+      const response = await fetch(`${apiUrl}/api/auth/signin`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: userRef.current,
+          password: passwordRef.current,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Store the token and user ID from the response
+        await storeToken(data.accessToken); // Changed from data.jwt to data.accessToken
+        await storeUserId(data.id.toString()); // Ensure ID is string
+
+        // Optional: Verify the token was stored
+        const storedToken = await getCurrentToken();
+
+        // Navigate to the main app screen
+        router.push("../(tabs)");
+      } else {
+        // Handle error
+        Alert.alert(
+          "Sign In Failed",
+          data.message || "Invalid username or password"
+        );
+      }
+    } catch (error) {
+      console.error("SignIn error:", error);
+      Alert.alert(
+        "Error",
+        "An error occurred during sign in. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -56,9 +95,7 @@ export default function IntroScreen() {
             style={{ paddingTop: hp(8), paddingHorizontal: wp(5) }}
             className="flex-1 gap-1"
           >
-            <View className="items-center">
-              {/* <Image style={{ height: hp(35), aspectRatio: 1 }} source={require("../assets/images/login.png")} resizeMode="contain"/> */}
-            </View>
+            <View className="items-center"></View>
             <View className="gap-10">
               <View
                 style={{ paddingHorizontal: wp(5) }}
@@ -130,36 +167,21 @@ export default function IntroScreen() {
                     Forgot passeord?
                   </Text>
                 </View>
-                {/* submit button */}
 
                 <View>
-                  {/* {
-                loading ? (
-                  <View className="flex-row justify-center">
-                    <Loading size={hp(13)} />
-                  </View>
-                ) : ( 
-                   onPress={handleRegister}*/}
                   <TouchableOpacity
-                    onPress={() => {
-                      // Navigate to the main tabs screen and update state to hide the intro
-                      router.push("../(tabs)");
-                    }}
-                    style={[
-                      { height: hp(6.5) }, // Inline style
-                      styles.SignInButton, // Style from StyleSheet
-                    ]}
+                    onPress={handleSignIn}
+                    style={[{ height: hp(6.5) }, styles.SignInButton]}
                     className="rounded-xl justify-center items-center"
+                    disabled={loading}
                   >
                     <Text
                       style={{ fontSize: hp(2.7) }}
                       className="text-white font-bold tracking-wider"
                     >
-                      Sign In
+                      {loading ? "Signing In..." : "Sign In"}
                     </Text>
                   </TouchableOpacity>
-                  {/* )
-              } */}
                 </View>
 
                 {/* signup text */}
