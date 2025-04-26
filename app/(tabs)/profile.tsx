@@ -7,18 +7,21 @@ import {
   TouchableOpacity,
   Modal,
   ScrollView,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
-import { SPRINGPORT8080, TOKEN } from "@/constants/apiConfig";
 import ProblemsListCards from "@/components/problem/ProblemsListCards";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { clearAuthData, getUserId, removeToken, removeUserId } from "@/constants/auth"; // Add these to your auth.ts
+import { SPRINGPORT8080, getCurrentToken } from "@/constants/apiConfig";
 
 export default function ProfileScreen() {
   const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
   const API_URL = SPRINGPORT8080 + "/api/";
-  const BEARER_TOKEN = TOKEN;
+  const [bearerToken, setBearerToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userProblems, setUserProblems] = useState<{ name: string }[]>([]);
@@ -57,8 +60,7 @@ export default function ProfileScreen() {
 
   // Update the getProfileImage function
   const getProfileImage = (imageName?: string) => {
-    if (!imageName)
-      return require("../../assets/images/avatar/default.png");
+    if (!imageName) return require("../../assets/images/avatar/default.png");
 
     // Type assertion if you're sure imageName will be a valid key
     return (
@@ -68,15 +70,34 @@ export default function ProfileScreen() {
   };
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch(`${API_URL}users/1`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${BEARER_TOKEN}`,
-            "Content-Type": "application/json",
-          },
-        });
+    // Get the token first
+    const token = await getCurrentToken();
+    setBearerToken(token);
+
+    if (!token) {
+      console.error("No authentication token available");
+      router.replace("../(app)/index"); // Redirect to login if no token
+      return;
+    }
+
+    // Get the current user's ID from storage
+    const currentUserId = await getUserId();
+    
+    if (!currentUserId) {
+      console.error("No user ID available");
+      router.replace("../(app)/index");
+      return;
+    }
+    // Fetch the current user's data using their ID
+    const response = await fetch(`${API_URL}users/${currentUserId}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
 
         if (!response.ok) {
           throw new Error(`Error ${response.status}: ${response.statusText}`);
@@ -89,7 +110,7 @@ export default function ProfileScreen() {
         const profileResponse = await fetch(`${API_URL}profiles/${userID}`, {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${BEARER_TOKEN}`,
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         });
@@ -99,7 +120,8 @@ export default function ProfileScreen() {
         }
 
         const profileData = await profileResponse.json();
-        setProfile(profileData); // Store the profile data
+        setProfile(profileData);
+
         // Fetch problems
         try {
           const problemsResponse = await fetch(
@@ -107,7 +129,7 @@ export default function ProfileScreen() {
             {
               method: "GET",
               headers: {
-                Authorization: `Bearer ${BEARER_TOKEN}`,
+                Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
               },
             }
@@ -121,13 +143,12 @@ export default function ProfileScreen() {
 
           const problemsData = await problemsResponse.json();
 
-          // Make sure `problemsData` is an array of objects
           if (
             Array.isArray(problemsData) &&
             problemsData.length > 0 &&
             typeof problemsData[0] === "object"
           ) {
-            setUserProblems(problemsData); // Store the entire object
+            setUserProblems(problemsData);
           } else {
             console.log("No problems returned or unexpected format.");
             setUserProblems([]);
@@ -140,21 +161,24 @@ export default function ProfileScreen() {
       }
     };
 
-    fetchUser();
+    fetchData();
   }, []);
 
   const calculateAge = (dateOfBirth: string | null) => {
     if (!dateOfBirth) return "-"; // Return dash or "Not specified" when no date exists
-    
+
     const birthDate = new Date(dateOfBirth);
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
       age--;
     }
-    
+
     return age;
   };
 
@@ -163,6 +187,24 @@ export default function ProfileScreen() {
       setModalVisible(false);
     }, [])
   );
+
+  const handleLogout = async () => {
+    try {
+      await clearAuthData();
+  
+      setBearerToken(null);
+      setUser(null);
+      setProfile(null);
+      setUserProblems([]);
+  
+      setModalVisible(false);
+      
+      router.replace("../(app)/index"); 
+    } catch (error) {
+      console.error("Logout failed:", error);
+      Alert.alert("Logout Error", "Could not complete logout. Please try again.");
+    }
+  };
 
   return (
     <ScrollView style={{ backgroundColor: "#ffffff", flex: 1 }}>
@@ -212,18 +254,17 @@ export default function ProfileScreen() {
 
         <View style={styles.infoContainer}>
           <View style={styles.infoBox}>
-          <Text style={styles.infoNumber}>
-    {profile ? (calculateAge(profile.dateOfBirth)) || "-" : "-"}
-    <Text style={styles.infoUnit}> Ys</Text>
-  </Text>
-  <Text style={styles.infoLabel}>Age</Text>
+            <Text style={styles.infoNumber}>
+              {profile ? calculateAge(profile.dateOfBirth) || "-" : "-"}
+              <Text style={styles.infoUnit}> Ys</Text>
+            </Text>
+            <Text style={styles.infoLabel}>Age</Text>
           </View>
           <View style={styles.infoBox}>
             <Text style={styles.infoNumber}>
               {profile ? profile.weight : "Loading..."}
               <Text style={styles.infoUnit}>Kg</Text>
               {"  "}
-              {/* <Text style={styles.or}>|</Text> */}
             </Text>
             <Text style={styles.infoLabel}>Weight </Text>
           </View>
@@ -281,9 +322,28 @@ export default function ProfileScreen() {
                 <Text style={styles.modalText}>Help</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.modalOption}>
+              <TouchableOpacity
+                style={styles.modalOption}
+                onPress={() => {
+                  Alert.alert(
+                    "Confirm Logout",
+                    "Are you sure you want to sign out?",
+                    [
+                      {
+                        text: "Cancel",
+                        style: "cancel",
+                      },
+                      {
+                        text: "Logout",
+                        onPress: handleLogout,
+                        style: "destructive",
+                      },
+                    ]
+                  );
+                }}
+              >
                 <Ionicons name="log-out" size={20} color="red" />
-                <Text style={styles.modalText}>Logout</Text>
+                <Text style={[styles.modalText, { color: "red" }]}>Logout</Text>
               </TouchableOpacity>
 
               <TouchableOpacity

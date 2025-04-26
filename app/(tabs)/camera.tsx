@@ -1,14 +1,12 @@
 import PhotoPreviewSection from "@/components/camera/PhotoPreviewSection";
 import ScanIcon from "@/components/svgIcons/camera/ScanIcon";
 import {
-  AntDesign,
   Feather,
-  Ionicons,
   MaterialCommunityIcons,
   MaterialIcons,
 } from "@expo/vector-icons";
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState} from "react";
 import {
   Animated,
   Button,
@@ -17,7 +15,6 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Image,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useNavigation } from "@react-navigation/native";

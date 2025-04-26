@@ -1,15 +1,29 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, Image, StyleSheet, TouchableOpacity, Modal, ScrollView, ImageBackground } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  ScrollView,
+  ImageBackground,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation, useRouter } from "expo-router";
 import moment from "moment";
-import { SPRINGPORT8080, TOKEN, USERID } from "@/constants/apiConfig";
 import WeightIcon from "@/components/svgIcons/profile/weight";
 import HeightIcon from "@/components/svgIcons/profile/height";
+import {
+  SPRINGPORT8080,
+  getCurrentToken,
+  getCurrentUserId,
+} from "@/constants/apiConfig";
 
 const EditProfile = () => {
-  const backgroundImage = require('../../assets/images/avatar/back.jpeg');
+  const backgroundImage = require("../../assets/images/avatar/back.jpeg");
   const [gender, setGender] = useState("");
   const [weight, setWeight] = useState("");
   const [height, setHeight] = useState("");
@@ -20,7 +34,9 @@ const EditProfile = () => {
   const [selectedDate, setSelectedDate] = useState<moment.Moment | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const API_URL = SPRINGPORT8080 + "/api/";
-  const BEARER_TOKEN = TOKEN;
+  const [bearerToken, setBearerToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+
   const [profile, setProfile] = useState<Profile | null>(null);
   const [username, setUsername] = useState("Loading...");
   const [modalVisible, setModalVisible] = useState(false);
@@ -248,48 +264,66 @@ const EditProfile = () => {
   ];
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const initializeAuth = async () => {
       try {
-        const response = await fetch(`${API_URL}users/${USERID}`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${BEARER_TOKEN}`,
-            "Content-Type": "application/json",
-          },
-        });
+        const token = await getCurrentToken();
+        const id = await getCurrentUserId();
 
-        console.log("Response status:", response.status);
-        if (!response.ok) {
-          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        setBearerToken(token);
+        setUserId(id);
+
+        if (token && id) {
+          await fetchUser(token, id); // Pass the values directly
         }
-
-        const data = await response.json();
-        console.log("Response data:", data);
-        setUser(data);
-
-        const userID = data.userID;
-        const profileResponse = await fetch(`${API_URL}profiles/${userID}`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${BEARER_TOKEN}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!profileResponse.ok) {
-          throw new Error(`Error fetching profile: ${profileResponse.status}`);
-        }
-
-        const profileData = await profileResponse.json();
-        console.log("Profile data:", profileData);
-        setProfile(profileData); // Store the profile data
       } catch (error) {
-        console.error("Failed to fetch user or profile:", error);
+        console.error("Error initializing auth:", error);
       }
     };
 
-    fetchUser();
+    initializeAuth();
   }, []);
+
+  const fetchUser = async (token: string, userId: string) => {
+    try {
+      const response = await fetch(`${SPRINGPORT8080}/api/users/${userId}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      console.log("Response status:", response.status);
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("Response data:", data);
+      setUser(data);
+
+      const profileResponse = await fetch(
+        `${SPRINGPORT8080}/api/profiles/${userId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!profileResponse.ok) {
+        throw new Error(`Error fetching profile: ${profileResponse.status}`);
+      }
+
+      const profileData = await profileResponse.json();
+      console.log("Profile data:", profileData);
+      setProfile(profileData);
+    } catch (error) {
+      console.error("Failed to fetch user or profile:", error);
+    }
+  };
 
   useEffect(() => {
     if (selectedDay && selectedMonth && selectedYear) {
@@ -301,10 +335,11 @@ const EditProfile = () => {
     }
   }, [selectedDay, selectedMonth, selectedYear]);
 
+  // Update your handleSave function
   const handleSave = async () => {
     try {
-      if (!user?.userID) {
-        throw new Error("User ID is missing");
+      if (!bearerToken || !userId) {
+        throw new Error("Authentication token or user ID is missing");
       }
 
       // Step 1: Update Username in Users API
@@ -314,14 +349,17 @@ const EditProfile = () => {
 
       console.log("Updating username with data:", updatedUser);
 
-      const userResponse = await fetch(`${API_URL}users/${user?.userID}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${BEARER_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedUser),
-      });
+      const userResponse = await fetch(
+        `${SPRINGPORT8080}/api/users/${userId}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${bearerToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedUser),
+        }
+      );
 
       if (!userResponse.ok) {
         const errorData = await userResponse.text();
@@ -342,6 +380,7 @@ const EditProfile = () => {
           .toString()
           .padStart(2, "0")}-${selectedDay.padStart(2, "0")}`;
       }
+
       // Step 2: Update Profile in Profiles API
       const updatedProfile = {
         gender: gender || "FEMALE",
@@ -355,11 +394,11 @@ const EditProfile = () => {
       console.log("Updating profile with data:", updatedProfile);
 
       const profileResponse = await fetch(
-        `${API_URL}profiles/${user?.userID}`,
+        `${SPRINGPORT8080}/api/profiles/${userId}`,
         {
           method: "PUT",
           headers: {
-            Authorization: `Bearer ${BEARER_TOKEN}`,
+            Authorization: `Bearer ${bearerToken}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify(updatedProfile),
@@ -377,56 +416,57 @@ const EditProfile = () => {
       }
 
       console.log("Profile updated successfully!");
-      router.push("../(tabs)/profile");
+      router.push("../(tabs)/profile"); // Using router instead of navigation
     } catch (error) {
       console.error("Failed to update profile:", error);
     }
   };
 
   return (
-    <ImageBackground 
-    source={backgroundImage} 
-    style={styles.backgroundImage}
-    resizeMode="cover"
-  >
-    <LinearGradient
-      colors={['rgba(199, 245, 255, 0.7)', 'rgba(0, 161, 198, 0.7)']}
-      style={StyleSheet.absoluteFillObject}
-    />
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={styles.container}>
+    <ImageBackground
+      source={backgroundImage}
+      style={styles.backgroundImage}
+      resizeMode="cover"
+    >
+      <LinearGradient
+        colors={["rgba(199, 245, 255, 0.7)", "rgba(0, 161, 198, 0.7)"]}
+        style={StyleSheet.absoluteFillObject}
+      />
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.container}>
+          <View style={styles.profileContainer}>
+            <Image source={selectedImage.source} style={styles.profileImage} />
+            <TouchableOpacity
+              style={styles.cameraIcon}
+              onPress={() => setModalVisible(true)}
+            >
+              <Ionicons name="camera" size={20} color="white" />
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.title}>
+            {user ? user.username : "Loading..."}
+          </Text>
 
-      <View style={styles.profileContainer}>
-          <Image source={selectedImage.source} style={styles.profileImage} />
-          <TouchableOpacity
-            style={styles.cameraIcon}
-            onPress={() => setModalVisible(true)}
-          >
-            <Ionicons name="camera" size={20} color="white" />
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.title}>{user ? user.username : "Loading..."}</Text>
-
-        {/* <LinearGradient
+          {/* <LinearGradient
           colors={["#63c5da", "#ffffff"]}
           style={styles.background}
         /> */}
 
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="chevron-back" size={28} color="black" />
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="chevron-back" size={28} color="black" />
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.settingsButton}>
-          <Text style={styles.saveText} onPress={handleSave}>
-            Save
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.settingsButton}>
+            <Text style={styles.saveText} onPress={handleSave}>
+              Save
+            </Text>
+          </TouchableOpacity>
 
-        {/* Profile Image & Camera Button */}
-        {/* <View style={styles.profileContainer}>
+          {/* Profile Image & Camera Button */}
+          {/* <View style={styles.profileContainer}>
           <Image source={selectedImage.source} style={styles.profileImage} />
           <TouchableOpacity
             style={styles.cameraIcon}
@@ -436,128 +476,135 @@ const EditProfile = () => {
           </TouchableOpacity>
         </View> */}
 
-        {/* <Text style={styles.title}>{user ? user.username : "Loading..."}</Text> */}
+          {/* <Text style={styles.title}>{user ? user.username : "Loading..."}</Text> */}
 
-        <Modal
-          visible={modalVisible}
-          animationType="slide"
-          transparent={true}
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent2}>
-              <Text style={styles.modalTitle}>Choose a Profile Picture</Text>
+          <Modal
+            visible={modalVisible}
+            animationType="slide"
+            transparent={true}
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent2}>
+                <Text style={styles.modalTitle}>Choose a Profile Picture</Text>
 
-              {/* Grid Layout */}
-              <View style={styles.imageGrid}>
-                {profileImages.map((image, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.imageContainer}
-                    onPress={() => selectImage(image)}
-                  >
-                    <Image source={image.source} style={styles.modalImage} />
-                  </TouchableOpacity>
-                ))}
+                {/* Grid Layout */}
+                <View style={styles.imageGrid}>
+                  {profileImages.map((image, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={styles.imageContainer}
+                      onPress={() => selectImage(image)}
+                    >
+                      <Image source={image.source} style={styles.modalImage} />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <TouchableOpacity
+                  style={styles.closeButton2}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.closeButtonText2}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
+          <View style={styles.inputContainer}>
+            <View style={styles.rowContainer}>
+              <View style={styles.halfWidth}>
+                <Text style={styles.label}>Your Location</Text>
+                <TouchableOpacity
+                  style={styles.inputBox}
+                  onPress={() => setActiveModal("location")}
+                >
+                  <Ionicons
+                    style={styles.icon}
+                    name="location-outline"
+                    size={18}
+                    color="#00838f"
+                  />
+
+                  <Text style={styles.input}>
+                    {location || "Select Location"}
+                  </Text>
+                </TouchableOpacity>
               </View>
 
-              <TouchableOpacity
-                style={styles.closeButton2}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={styles.closeButtonText2}>Cancel</Text>
-              </TouchableOpacity>
+              <View style={styles.halfWidth}>
+                <Text style={styles.label}>Your Gender</Text>
+                <TouchableOpacity
+                  style={styles.inputBox}
+                  onPress={() => setActiveModal("gender")}
+                >
+                  <Ionicons
+                    name={gender === "FEMALE" ? "female" : "male"}
+                    size={20}
+                    color="gray"
+                    style={styles.icon}
+                  />
+                  <Text style={styles.input}>{gender || "Select Gender"}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        </Modal>
 
-        <View style={styles.inputContainer}>
-          <View style={styles.rowContainer}>
-            <View style={styles.halfWidth}>
-              <Text style={styles.label}>Your Location</Text>
+            <Text style={styles.label}>Your Birthday</Text>
+            <View style={styles.dateBoxContainer}>
+              {/* Day Box */}
               <TouchableOpacity
-                style={styles.inputBox}
-                onPress={() => setActiveModal("location")}
+                style={styles.dateBox}
+                onPress={() => setActiveModal("day")}
               >
-                <Ionicons style={styles.icon} name="location-outline" size={18} color="#00838f" />
+                <Text style={styles.dateBoxText}>{selectedDay || "Day"}</Text>
+              </TouchableOpacity>
 
-                <Text style={styles.input}>
-                  {location || "Select Location"}
+              {/* Month Box */}
+              <TouchableOpacity
+                style={styles.dateBox}
+                onPress={() => setActiveModal("month")}
+              >
+                <Text style={styles.dateBoxText}>
+                  {selectedMonth || "Month"}
                 </Text>
               </TouchableOpacity>
-            </View>
 
-            <View style={styles.halfWidth}>
-              <Text style={styles.label}>Your Gender</Text>
+              {/* Year Box */}
               <TouchableOpacity
-                style={styles.inputBox}
-                onPress={() => setActiveModal("gender")}
+                style={styles.dateBox}
+                onPress={() => setActiveModal("year")}
               >
-                <Ionicons
-                  name={gender === "FEMALE" ? "female" : "male"}
-                  size={20}
-                  color="gray"
-                  style={styles.icon}
-                />
-                <Text style={styles.input}>{gender || "Select Gender"}</Text>
+                <Text style={styles.dateBoxText}>{selectedYear || "Year"}</Text>
               </TouchableOpacity>
             </View>
-          </View>
 
-          <Text style={styles.label}>Your Birthday</Text>
-          <View style={styles.dateBoxContainer}>
-            {/* Day Box */}
-            <TouchableOpacity
-              style={styles.dateBox}
-              onPress={() => setActiveModal("day")}
-            >
-              <Text style={styles.dateBoxText}>{selectedDay || "Day"}</Text>
-            </TouchableOpacity>
+            {/* Render the modal */}
+            <SelectionModal />
 
-            {/* Month Box */}
-            <TouchableOpacity
-              style={styles.dateBox}
-              onPress={() => setActiveModal("month")}
-            >
-              <Text style={styles.dateBoxText}>{selectedMonth || "Month"}</Text>
-            </TouchableOpacity>
+            <Text style={styles.label}>Your Weight</Text>
+            <View style={styles.inputBox}>
+              <WeightIcon size={5} color="#00838f" />
+              <TextInput
+                style={styles.input}
+                value={weight}
+                onChangeText={(text) => setWeight(text)}
+                keyboardType="numeric"
+              />
+            </View>
 
-            {/* Year Box */}
-            <TouchableOpacity
-              style={styles.dateBox}
-              onPress={() => setActiveModal("year")}
-            >
-              <Text style={styles.dateBoxText}>{selectedYear || "Year"}</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Render the modal */}
-          <SelectionModal />
-
-          <Text style={styles.label}>Your Weight</Text>
-          <View style={styles.inputBox}>
-            <WeightIcon size={5} color="#00838f" />
-          <TextInput
-              style={styles.input}
-              value={weight}
-              onChangeText={(text) => setWeight(text)}
-              keyboardType="numeric"
-            />
-          </View>
-
-          <Text style={styles.label}>Your Height</Text>
-          <View style={styles.inputBox}>
-          <HeightIcon size={5} color="#00838f" />
-          <TextInput
-              style={styles.input}
-              value={height}
-              onChangeText={(text) => setHeight(text)}
-              keyboardType="numeric"
-            />
+            <Text style={styles.label}>Your Height</Text>
+            <View style={styles.inputBox}>
+              <HeightIcon size={5} color="#00838f" />
+              <TextInput
+                style={styles.input}
+                value={height}
+                onChangeText={(text) => setHeight(text)}
+                keyboardType="numeric"
+              />
+            </View>
           </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
     </ImageBackground>
   );
 };
@@ -606,14 +653,14 @@ const styles = StyleSheet.create({
   },
   backgroundImage: {
     flex: 1,
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   container: {
     flex: 1,
     padding: 5,
     paddingTop: 60,
-    alignItems: 'center',
+    alignItems: "center",
   },
   pickerBox: {
     borderWidth: 1,
@@ -738,7 +785,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 9,
     color: "black",
-    marginLeft:12,
+    marginLeft: 12,
     paddingVertical: 3, // Add some padding for better touch area
   },
   selectTextStyle: {
@@ -751,7 +798,7 @@ const styles = StyleSheet.create({
   },
   icon: {
     marginLeft: 5,
-    color:"#3498db",
+    color: "#3498db",
   },
   picker: {
     flex: 1,
@@ -776,9 +823,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "white",
   },
-  weIcon:{
-marginTop: 55,
-marginLeft: 10,
+  weIcon: {
+    marginTop: 55,
+    marginLeft: 10,
   },
   modalContainer: {
     flex: 1,
@@ -837,18 +884,18 @@ marginLeft: 10,
   //   alignItems: 'center',
   // },
   profileContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 15,
   },
   imageWrapper: {
-    position: 'relative',
+    position: "relative",
   },
   profileImage: {
-    marginTop:22,
+    marginTop: 22,
     width: 150,
     height: 150,
     borderRadius: 100,
-    borderColor: '#fff',
+    borderColor: "#fff",
     borderWidth: 5,
   },
 });

@@ -11,11 +11,9 @@ import React, { useEffect, useState } from "react";
 import { Feather } from "@expo/vector-icons";
 import { CameraCapturedPicture } from "expo-camera";
 import { useRouter } from "expo-router";
-import LoadinfScreen from "./LoadingScreen";
 import LoadingScreen from "./LoadingScreen";
 import * as Network from "expo-network";
-import { FASTAPIPORT8000, SPRINGPORT8080, TOKEN } from "@/constants/apiConfig";
-
+import { SPRINGPORT8080, getCurrentToken, getCurrentUserId, FASTAPIPORT8000 } from "@/constants/apiConfig";
 const API_URL = SPRINGPORT8080 + "/api/reports";
 const SPRINGURL = SPRINGPORT8080; // Replace with your actual API base URL
 const IP = "192.168.1.117";
@@ -45,17 +43,37 @@ const PhotoPreviewSection = ({
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const [apiBaseURL, setApiBaseURL] = useState("");
+  const [bearerToken, setBearerToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
 
   useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        const token = await getCurrentToken();
+        const id = await getCurrentUserId();
+        setBearerToken(token);
+        setUserId(Number(id));
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+      }
+    };
+    initializeAuth();
+
+    // Get local IP for FastAPI
     (async () => {
-      const localIP = await getLocalIP();
+      const localIP = await Network.getIpAddressAsync();
       if (localIP) {
-        setApiBaseURL(`http://${localIP}:8000`); // Set FastAPI base URL dynamically
+        setApiBaseURL(`http://${localIP}:8000`);
       }
     })();
   }, []);
 
   const uploadImage = async () => {
+    if (!bearerToken || !userId) {
+      Alert.alert("Error", "Authentication not ready");
+      return;
+    }
+
     setLoading(true);
     try {
       const formData = new FormData();
@@ -76,10 +94,11 @@ const PhotoPreviewSection = ({
 
       console.log("Uploading image...");
 
-      const response = await fetch(`${API_URL}/${USER_ID}/image`, {
+      // Step 1: Upload image to Spring Boot
+      const response = await fetch(`${SPRINGPORT8080}/api/reports/${userId}/image`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${TOKEN}`,
+          Authorization: `Bearer ${bearerToken}`,
           Accept: "application/json",
         },
         body: formData,
@@ -96,8 +115,8 @@ const PhotoPreviewSection = ({
       const imageUrl = responseData.image.url;
       console.log("Image URL:", imageUrl);
 
-      // Step 3: Send the image URL to the FastAPI backend
-      const problemResponse = await fetch(`${ngrokLink}/detect-problems`, {
+      // Step 3: Send to FastAPI for problem detection
+      const problemResponse = await fetch(`${FASTAPIPORT8000}/detect-problems`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -108,19 +127,23 @@ const PhotoPreviewSection = ({
       const problemData = await problemResponse.json();
       console.log("Problem Detection Response:", problemData);
 
-      // Step 3: Process problems and save them for the user
+      if (!problemResponse.ok) {
+        throw new Error(`Problem detection failed: ${problemResponse.status}`);
+      }
+
+      // Step 4: Process and save detected problems
       for (const fullProblemName of problemData.problems) {
-        const problemName = fullProblemName.split(":")[0].trim(); // Extract name before ":"
+        const problemName = fullProblemName.split(":")[0].trim();
 
         console.log(`Fetching problem ID for: ${problemName}`);
 
-        // Get problem ID from Spring Boot API
+        // Get problem ID
         const problemIdResponse = await fetch(
-          `${SPRINGURL}/api/problems/name/${encodeURIComponent(problemName)}`,
+          `${SPRINGPORT8080}/api/problems/name/${encodeURIComponent(problemName)}`,
           {
             method: "GET",
             headers: {
-              Authorization: `Bearer ${TOKEN}`,
+              Authorization: `Bearer ${bearerToken}`,
               Accept: "application/json",
             },
           }
@@ -135,26 +158,20 @@ const PhotoPreviewSection = ({
         const problemId = problemIdData.problemID;
         console.log(`Problem ID for ${problemName}: ${problemId}`);
 
-        // Step 4: Save problem to user
-        console.log(`Saving problem ${problemId} to user ${USER_ID}`);
-
+        // Save problem to user
         const saveProblemResponse = await fetch(
-          `${SPRINGURL}/api/problems/user/${USER_ID}/add-problem/${problemId}`,
+          `${SPRINGPORT8080}/api/problems/user/${userId}/add-problem/${problemId}`,
           {
             method: "POST",
             headers: {
-              Authorization: `Bearer ${TOKEN}`,
+              Authorization: `Bearer ${bearerToken}`,
               Accept: "application/json",
             },
           }
         );
 
         if (!saveProblemResponse.ok) {
-          console.error(
-            `Failed to save problem ${problemId} for user ${USER_ID}`
-          );
-        } else {
-          console.log(`Problem ${problemId} saved for user ${USER_ID}`);
+          console.error(`Failed to save problem ${problemId} for user ${userId}`);
         }
       }
       if (problemResponse.ok) {

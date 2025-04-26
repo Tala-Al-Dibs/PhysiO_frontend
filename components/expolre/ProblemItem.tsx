@@ -4,9 +4,7 @@ import { Problem } from "@/components/expolre/types/types";
 import { ProblemColors } from "@/constants/Colors";
 import {
   UnevenShouldersRightHigher,
-  UnevenShouldersLeftHigher,
   UnevenHipsRightHigher,
-  UnevenHipsLeftHigher,
   Scoliosis,
   BowKnees,
   KnockKnees,
