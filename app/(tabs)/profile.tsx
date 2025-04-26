@@ -13,8 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
 import ProblemsListCards from "@/components/problem/ProblemsListCards";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { clearAuthData, getUserId, removeToken, removeUserId } from "@/constants/auth"; // Add these to your auth.ts
+import { clearAuthData, getUserId } from "@/constants/auth"; // Add these to your auth.ts
 import { SPRINGPORT8080, getCurrentToken } from "@/constants/apiConfig";
 
 export default function ProfileScreen() {
@@ -72,32 +71,32 @@ export default function ProfileScreen() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-    // Get the token first
-    const token = await getCurrentToken();
-    setBearerToken(token);
+        // Get the token first
+        const token = await getCurrentToken();
+        setBearerToken(token);
 
-    if (!token) {
-      console.error("No authentication token available");
-      router.replace("../(app)/index"); // Redirect to login if no token
-      return;
-    }
+        if (!token) {
+          console.error("No authentication token available");
+          router.replace("../(app)/index"); // Redirect to login if no token
+          return;
+        }
 
-    // Get the current user's ID from storage
-    const currentUserId = await getUserId();
-    
-    if (!currentUserId) {
-      console.error("No user ID available");
-      router.replace("../(app)/index");
-      return;
-    }
-    // Fetch the current user's data using their ID
-    const response = await fetch(`${API_URL}users/${currentUserId}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+        // Get the current user's ID from storage
+        const currentUserId = await getUserId();
+
+        if (!currentUserId) {
+          console.error("No user ID available");
+          router.replace("../(app)/index");
+          return;
+        }
+        // Fetch the current user's data using their ID
+        const response = await fetch(`${API_URL}users/${currentUserId}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
 
         if (!response.ok) {
           throw new Error(`Error ${response.status}: ${response.statusText}`);
@@ -191,18 +190,21 @@ export default function ProfileScreen() {
   const handleLogout = async () => {
     try {
       await clearAuthData();
-  
+
       setBearerToken(null);
       setUser(null);
       setProfile(null);
       setUserProblems([]);
-  
+
       setModalVisible(false);
-      
-      router.replace("../(app)/index"); 
+
+      router.replace("../(app)/index");
     } catch (error) {
       console.error("Logout failed:", error);
-      Alert.alert("Logout Error", "Could not complete logout. Please try again.");
+      Alert.alert(
+        "Logout Error",
+        "Could not complete logout. Please try again."
+      );
     }
   };
 

@@ -11,8 +11,12 @@ import {
 import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
-import { Ionicons, MaterialIcons} from "@expo/vector-icons";
-import { SPRINGPORT8080, getCurrentToken, getCurrentUserId } from "@/constants/apiConfig";
+import { Ionicons, MaterialIcons, Feather } from "@expo/vector-icons";
+import {
+  SPRINGPORT8080,
+  getCurrentToken,
+  getCurrentUserId,
+} from "@/constants/apiConfig";
 import PhysioHeader from "@/components/Physiotherapists/physiotherapistsHeader";
 import FilterModal from "@/components/Physiotherapists/FilterModal";
 
@@ -31,6 +35,29 @@ interface Physiotherapist {
     url: string;
   };
 }
+interface UserProfile {
+  id: string;
+  username: string;
+  location?: string;
+}
+const LocationPrompt = ({ onPress }: { onPress: () => void }) => (
+  <TouchableOpacity
+    style={styles.locationPromptContainer}
+    onPress={onPress}
+    activeOpacity={0.7}
+  >
+    <View style={styles.locationPromptContent}>
+      <Feather name="map-pin" size={24} color="#0CA7BD" />
+      <View style={styles.locationPromptTextContainer}>
+        <Text style={styles.locationPromptTitle}>Location Required</Text>
+        <Text style={styles.locationPromptMessage}>
+          Please set your location to see nearby physiotherapists
+        </Text>
+      </View>
+      <Feather name="chevron-right" size={24} color="#0CA7BD" />
+    </View>
+  </TouchableOpacity>
+);
 
 export default function PhysiotherapistsN() {
   const navigation = useNavigation();
@@ -48,6 +75,11 @@ export default function PhysiotherapistsN() {
   });
   const [bearerToken, setBearerToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const isLocationMissing = !userProfile?.location?.trim();
+  const [userLocation, setUserLocation] = useState<string | null>(null); // Add state for user location
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   React.useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });
@@ -59,10 +91,10 @@ export default function PhysiotherapistsN() {
       try {
         const token = await getCurrentToken();
         const id = await getCurrentUserId();
-        
+
         setBearerToken(token);
         setUserId(id);
-        
+
         if (token && id) {
           fetchPhysiotherapists(token, id);
         }
@@ -71,9 +103,49 @@ export default function PhysiotherapistsN() {
         setError("Failed to initialize authentication");
       }
     };
-    
+
     initializeAuth();
   }, []);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        await Promise.all([
+          fetchUserProfile(), // Add fetching user profile
+        ]);
+      } catch (error) {
+        console.error("Failed to fetch initial data:", error);
+      } finally {
+        setLoading(false);
+        setIsInitialLoad(false);
+      }
+    };
+    if (SPRINGPORT8080 && bearerToken && userId) {
+      fetchData();
+    }
+  }, [SPRINGPORT8080, bearerToken, userId]);
+  const fetchUserProfile = async () => {
+    if (!userId || !bearerToken) return;
+
+    try {
+      const response = await fetch(`${SPRINGPORT8080}/api/profiles/${userId}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${bearerToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setUserLocation(data.location); // Set the user's location from profile
+    } catch (error) {
+      console.error("Failed to fetch user profile:", error);
+    }
+  };
 
   const fetchPhysiotherapists = async (token: string, userId: string) => {
     try {
@@ -88,11 +160,11 @@ export default function PhysiotherapistsN() {
           },
         }
       );
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       setPhysiotherapists(data);
       setError(null);
@@ -183,6 +255,12 @@ export default function PhysiotherapistsN() {
 
       {/* Content */}
       <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {!userLocation && (
+          <LocationPrompt
+            onPress={() => router.push("../(profile)/editProfile")}
+          />
+        )}
+
         {filteredPhysiotherapists.length === 0 ? (
           <View style={styles.emptyContainer}>
             <MaterialIcons name="search-off" size={48} color="#0CA7BD" />
@@ -243,6 +321,35 @@ export default function PhysiotherapistsN() {
 }
 
 const styles = StyleSheet.create({
+  locationPromptContainer: {
+    backgroundColor: "#f0f9fa",
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 8,
+    marginVertical: 10,
+    borderWidth: 1,
+    borderColor: "#d1f0f5",
+    marginHorizontal: 20,
+  },
+  locationPromptContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  locationPromptTextContainer: {
+    flex: 1,
+    marginHorizontal: 12,
+  },
+  locationPromptTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#064D57",
+    marginBottom: 4,
+  },
+  locationPromptMessage: {
+    fontSize: 14,
+    color: "#666",
+  },
   container: {
     flex: 1,
     backgroundColor: "#f8f9fa",

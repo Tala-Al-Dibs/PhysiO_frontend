@@ -1,6 +1,6 @@
 import { getApiUrl, getUserId as getStoredUserId, getToken as getStoredToken } from './auth';
 
-export const SPRINGPORT8080 = "http://192.168.88.7:8080";
+export const SPRINGPORT8080 = "http://192.168.1.5:8080";
 export const FASTAPIPORT8000 = "https://a9af-84-242-56-27.ngrok-free.app";
 
 

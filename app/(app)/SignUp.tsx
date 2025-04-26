@@ -18,14 +18,14 @@ import {
 } from "react-native-responsive-screen";
 import CustomKeyboardView from "@/components/CustomKeyboardView";
 import { StatusBar } from "expo-status-bar";
-import {Feather} from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import "../../global.css";
 import GoogleLogo from "@/components/svgIcons/signin-signup/GoogleLogo";
 import { useNavigation } from "@react-navigation/native";
 import LogoSvg from "@/components/svgIcons/logo/LogoSvg";
 import { getSpringPort } from "@/constants/apiConfig";
 import { storeToken, storeUserId } from "@/constants/auth";
-
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 export default function SignUp() {
   const router = useRouter();
   const userRef = useRef("");
@@ -42,23 +42,23 @@ export default function SignUp() {
       Alert.alert("Sign Up", "Please enter a username");
       return;
     }
-    
+
     if (!passwordRef.current) {
       Alert.alert("Sign Up", "Please enter a password");
       return;
     }
-  
+
     // Basic password validation
     if (passwordRef.current.length < 6) {
       Alert.alert("Sign Up", "Password must be at least 6 characters");
       return;
     }
-  
+
     setLoading(true);
-  
+
     try {
       const apiUrl = await getSpringPort();
-      
+
       // Signup request
       const signupResponse = await fetch(`${apiUrl}/api/auth/signup`, {
         method: "POST",
@@ -68,14 +68,14 @@ export default function SignUp() {
           password: passwordRef.current,
         }),
       });
-  
+
       if (!signupResponse.ok) {
         const errorData = await signupResponse.json();
         const errorMessage = errorData.message || "Registration failed";
         Alert.alert("Sign Up Failed", errorMessage);
-        return; 
+        return;
       }
-  
+
       const loginResponse = await fetch(`${apiUrl}/api/auth/signin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -84,34 +84,33 @@ export default function SignUp() {
           password: passwordRef.current,
         }),
       });
-  
+
       if (!loginResponse.ok) {
         const errorData = await loginResponse.json();
-        Alert.alert("Login Failed", errorData.message || "Automatic login failed");
+        Alert.alert(
+          "Login Failed",
+          errorData.message || "Automatic login failed"
+        );
         return;
       }
-  
+
       const { accessToken, id } = await loginResponse.json();
-      
+
       // Store credentials
-      await Promise.all([
-        storeToken(accessToken),
-        storeUserId(id.toString()),
-      ]);
-  
+      await Promise.all([storeToken(accessToken), storeUserId(id.toString())]);
+
       // Navigate to main app
       router.replace("/(tabs)");
-      
     } catch (error: any) {
       console.error("Registration error:", error);
-      
+
       let errorMessage = "An error occurred during registration";
       if (error.message.includes("username is already taken")) {
         errorMessage = "Username is already taken";
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       Alert.alert("Registration Error", errorMessage);
     } finally {
       setLoading(false);
@@ -258,9 +257,7 @@ export default function SignUp() {
                 />
               </View>
             </View>
-            <TouchableOpacity className="flex-row justify-center pt-10">
-              <GoogleLogo />
-            </TouchableOpacity>
+            <GoogleSignInButton />
           </View>
         </CustomKeyboardView>
       </TouchableWithoutFeedback>
