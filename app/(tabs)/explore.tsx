@@ -255,6 +255,12 @@ const explore: React.FC = () => {
         });
       } else {
         addToLatestSearches(item.name);
+        router.push({
+          pathname: "../(problem)/problem",
+          params: {
+            problem: item.name,
+          },
+        });
       }
     };
 

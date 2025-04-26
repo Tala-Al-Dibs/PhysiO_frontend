@@ -12,18 +12,17 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation, useRouter } from "expo-router";
-import { Picker } from "@react-native-picker/picker";
-// import CalendarPicker from "react-native-calendar-picker";
 import moment from "moment";
 import { SPRINGPORT8080, TOKEN, USERID } from "@/constants/apiConfig";
 
 const EditProfile = () => {
   const [gender, setGender] = useState("");
-  const [weight, setWeight] = useState("55");
-  const [height, setHeight] = useState("160");
-  const [location, setLocation] = useState("BETHLEHEM");
+  const [weight, setWeight] = useState("");
+  const [height, setHeight] = useState("");
+  const [location, setLocation] = useState("");
   const [user, setUser] = useState<User | null>(null);
   const [profileImage, setProfileImage] = useState(null);
+  const [userLocation, setUserLocation] = useState("Location");
   const [selectedDate, setSelectedDate] = useState<moment.Moment | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const API_URL = SPRINGPORT8080 + "/api/";
@@ -32,24 +31,163 @@ const EditProfile = () => {
   const [username, setUsername] = useState("Loading...");
   const [modalVisible, setModalVisible] = useState(false);
   const navigation = useNavigation();
+  const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString());
+  const [activeModal, setActiveModal] = useState<
+    "day" | "month" | "year" | "gender" | "location" | null
+  >(null);
+
+  useEffect(() => {
+    if (profile) {
+      setGender(profile.gender);
+      setLocation(profile.location);
+      setHeight(profile.height?.toString() || "");
+      setWeight(profile.weight?.toString() || ""); // Set weight
+
+      if (profile.dateOfBirth) {
+        const date = moment(profile.dateOfBirth);
+        setSelectedDay(date.format("D"));
+        setSelectedMonth(months[date.month()]);
+        setSelectedYear(date.format("YYYY"));
+      }
+    }
+  }, [profile]);
+
+  const SelectionModal = () => {
+    const data = {
+      day: days,
+      month: months,
+      year: years,
+      gender: ["MALE", "FEMALE"],
+      location: countries,
+    };
+
+    const currentValue = {
+      day: selectedDay,
+      month: selectedMonth,
+      year: selectedYear,
+      gender: gender,
+      location: location,
+    };
+
+    const titles = {
+      day: "Select Day",
+      month: "Select Month",
+      year: "Select Year",
+      gender: "Select Gender",
+      location: "Select Location",
+    };
+
+    const handleSelect = (value: string) => {
+      if (activeModal === "day") setSelectedDay(value);
+      if (activeModal === "month") setSelectedMonth(value);
+      if (activeModal === "year") setSelectedYear(value);
+      if (activeModal === "gender") setGender(value);
+      if (activeModal === "location") setLocation(value);
+      setActiveModal(null);
+    };
+
+    return (
+      <Modal
+        visible={!!activeModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setActiveModal(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
+              {activeModal && titles[activeModal]}
+            </Text>
+            <ScrollView>
+              {activeModal &&
+                data[activeModal].map((item) => (
+                  <TouchableOpacity
+                    key={item}
+                    style={[
+                      styles.modalItem,
+                      currentValue[activeModal] === item && styles.selectedItem,
+                    ]}
+                    onPress={() => handleSelect(item)}
+                  >
+                    <Text style={styles.modalItemText}>{item}</Text>
+                  </TouchableOpacity>
+                ))}
+            </ScrollView>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setActiveModal(null)}
+            >
+              <Text style={styles.closeButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+  const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 100 }, (_, i) =>
+    (currentYear - i).toString()
+  ).reverse();
+  const [selectedDay, setSelectedDay] = useState<string>("1");
+  const [selectedMonth, setSelectedMonth] = useState<string>("January");
+  const [selectedYear, setSelectedYear] = useState<string>("2000");
 
   React.useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
+  type ProfileImage = {
+    name: string;
+    source: any; // You can refine this later to a more specific type like ImageSourcePropType
+  };
+
   const profileImages = [
-    require("../../assets/images/avatar/profile.png"),
-    require("../../assets/images/avatar/profile2pic.jpg"),
-    require("../../assets/images/avatar/profile3pic.jpg"),
-    require("../../assets/images/avatar/profile4pic.jpg"),
-    require("../../assets/images/avatar/profile6pic.jpg"),
-    require("../../assets/images/avatar/profile7pic.jpg"),
+    {
+      name: "profile1",
+      source: require("../../assets/images/avatar/profile.png"),
+    },
+    {
+      name: "profile2",
+      source: require("../../assets/images/avatar/profile2pic.jpg"),
+    },
+    {
+      name: "profile3",
+      source: require("../../assets/images/avatar/profile3pic.jpg"),
+    },
+    {
+      name: "profile4",
+      source: require("../../assets/images/avatar/profile4pic.jpg"),
+    },
+    {
+      name: "profile5",
+      source: require("../../assets/images/avatar/profile6pic.jpg"),
+    },
+    {
+      name: "profile6",
+      source: require("../../assets/images/avatar/profile7pic.jpg"),
+    },
   ];
 
-  const [selectedImage, setSelectedImage] = useState(profileImages[0]);
+  const [selectedImage, setSelectedImage] = useState<ProfileImage>(
+    profileImages[0]
+  );
 
-  const selectImage = (image: string) => {
-    setSelectedImage(image);
+  const selectImage = (imageObj: ProfileImage) => {
+    setSelectedImage(imageObj);
     setModalVisible(false);
   };
 
@@ -154,6 +292,7 @@ const EditProfile = () => {
         weight: parseInt(weight),
         height: parseInt(height),
         location,
+        profilePictureUri: selectedImage.name,
         dateOfBirth: selectedDate
           ? selectedDate.format("YYYY-MM-DD")
           : "2003-08-03",
@@ -190,6 +329,19 @@ const EditProfile = () => {
     }
   };
 
+  useEffect(() => {
+    if (profile) {
+      setGender(profile.gender);
+      setLocation(profile.location);
+      if (profile.dateOfBirth) {
+        const date = moment(profile.dateOfBirth);
+        setSelectedDay(date.format("D"));
+        setSelectedMonth(months[date.month()]);
+        setSelectedYear(date.format("YYYY"));
+      }
+    }
+  }, [profile]);
+
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
@@ -213,7 +365,7 @@ const EditProfile = () => {
 
         {/* Profile Image & Camera Button */}
         <View style={styles.profileContainer}>
-          <Image source={selectedImage} style={styles.profileImage} />
+          <Image source={selectedImage.source} style={styles.profileImage} />
           <TouchableOpacity
             style={styles.cameraIcon}
             onPress={() => setModalVisible(true)}
@@ -242,7 +394,7 @@ const EditProfile = () => {
                     key={index}
                     onPress={() => selectImage(image)}
                   >
-                    <Image source={image} style={styles.modalImage} />
+                    <Image source={image.source} style={styles.modalImage} />
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -271,101 +423,68 @@ const EditProfile = () => {
           <View style={styles.rowContainer}>
             <View style={styles.halfWidth}>
               <Text style={styles.label}>Your Location</Text>
-              <View style={styles.inputBox}>
+              <TouchableOpacity
+                style={styles.inputBox}
+                onPress={() => setActiveModal("location")}
+              >
                 <Ionicons
                   name="location-outline"
                   size={20}
                   color="gray"
                   style={styles.icon}
                 />
-                <Picker
-                  selectedValue={
-                    profile ? profile.location + "..." : "Loading..."
-                  }
-                  style={styles.picker}
-                  onValueChange={(itemValue) => setLocation(itemValue)}
-                >
-                  {countries.map((country) => (
-                    <Picker.Item
-                      label={country}
-                      value={country}
-                      key={country}
-                    />
-                  ))}
-                </Picker>
-              </View>
+                <Text style={styles.input}>
+                  {location || "Select Location"}
+                </Text>
+              </TouchableOpacity>
             </View>
 
             <View style={styles.halfWidth}>
               <Text style={styles.label}>Your Gender</Text>
-              <View style={styles.inputBox}>
+              <TouchableOpacity
+                style={styles.inputBox}
+                onPress={() => setActiveModal("gender")}
+              >
                 <Ionicons
-                  name={profile?.gender === "Female" ? "female" : "male"}
+                  name={gender === "FEMALE" ? "female" : "male"}
                   size={20}
                   color="gray"
                   style={styles.icon}
                 />
-                <Picker
-                  selectedValue={gender}
-                  onValueChange={(itemValue) => setGender(itemValue)}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Select Gender" value="" />
-                  <Picker.Item label="MALE" value="MALE" />
-                  <Picker.Item label="FEMALE" value="FEMALE" />
-                </Picker>
-              </View>
+                <Text style={styles.input}>{gender || "Select Gender"}</Text>
+              </TouchableOpacity>
             </View>
           </View>
 
           <Text style={styles.label}>Your Birthday</Text>
-          <TouchableOpacity
-            style={styles.inputBox}
-            onPress={() => setShowCalendar(true)}
-          >
-            <Ionicons
-              name="calendar-outline"
-              size={20}
-              color="gray"
-              style={styles.icon}
-            />
-            <Text style={styles.input}>
-              {selectedDate ? selectedDate.format("YYYY-MM-DD") : "Select Date"}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.dateBoxContainer}>
+            {/* Day Box */}
+            <TouchableOpacity
+              style={styles.dateBox}
+              onPress={() => setActiveModal("day")}
+            >
+              <Text style={styles.dateBoxText}>{selectedDay}</Text>
+            </TouchableOpacity>
 
-          {/* Modal for Calendar */}
-          <Modal
-            visible={showCalendar}
-            animationType="slide"
-            transparent={true}
-            onRequestClose={() => setShowCalendar(false)}
-          >
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                {/* <CalendarPicker
-                  onDateChange={(date) => {
-                    const momentDate = moment(date);
-                    setSelectedDate(momentDate);
-                    setShowCalendar(false);
-                  }}
-                  width={300}
-                  height={300}
-                  selectedDayStyle={{
-                    backgroundColor: "#3498db",
-                    borderRadius: 20,
-                  }}
-                  selectedDayTextStyle={{ color: "white", fontSize: 16 }}
-                /> */}
-                <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={() => setShowCalendar(false)}
-                >
-                  <Text style={styles.closeButtonText}>Close</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
+            {/* Month Box */}
+            <TouchableOpacity
+              style={styles.dateBox}
+              onPress={() => setActiveModal("month")}
+            >
+              <Text style={styles.dateBoxText}>{selectedMonth}</Text>
+            </TouchableOpacity>
+
+            {/* Year Box */}
+            <TouchableOpacity
+              style={styles.dateBox}
+              onPress={() => setActiveModal("year")}
+            >
+              <Text style={styles.dateBoxText}>{selectedYear}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Render the modal */}
+          <SelectionModal />
 
           <Text style={styles.label}>Your Weight</Text>
           <View style={styles.inputBox}>
@@ -458,6 +577,34 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
   },
+  pickerBox: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 15,
+  },
+  datePickerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 15,
+  },
+  datePicker: {
+    flex: 1,
+    marginHorizontal: 2,
+    backgroundColor: "#f4f6f7",
+    borderRadius: 10,
+    height: 60,
+    justifyContent: "center",
+  },
+  datePickerItem: {
+    height: 50,
+    width: "100%",
+  },
+  pickerText: {
+    fontSize: 16,
+    color: "#333",
+  },
   backButton: {
     position: "absolute",
     top: 50,
@@ -471,6 +618,60 @@ const styles = StyleSheet.create({
   profileContainer: {
     marginTop: 100,
     alignItems: "center",
+  },
+  dateBoxContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 15,
+  },
+  dateBox: {
+    flex: 1,
+    marginHorizontal: 5,
+    backgroundColor: "#f4f6f7",
+    borderRadius: 10,
+    height: 50,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  dateBoxText: {
+    fontSize: 12,
+    color: "black",
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalContent: {
+    width: "80%",
+    maxHeight: "60%",
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 20,
+  },
+  modalItem: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  selectedItem: {
+    backgroundColor: "#f0f8ff",
+  },
+  modalItemText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  closeButton: {
+    marginTop: 15,
+    padding: 10,
+    backgroundColor: "#63c5da",
+    borderRadius: 5,
+    alignItems: "center",
+  },
+  closeButtonText: {
+    color: "white",
+    fontSize: 16,
   },
   profileImage: {
     width: 100,
@@ -489,7 +690,7 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     width: "90%",
-    marginTop: 20,
+    marginTop: 50,
   },
   label: {
     fontSize: 11,
@@ -499,23 +700,38 @@ const styles = StyleSheet.create({
   inputBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f4f6f7",
+    backgroundColor: "#f7f7f7",
     padding: 5,
     borderRadius: 10,
-    marginBottom: 9,
+    marginBottom: 10,
     height: 60,
-  },
-  icon: {
-    marginRight: 10,
   },
   input: {
     flex: 1,
     fontSize: 12,
-    color: "black", // Ensure the text color is visible
+    color: "black",
+    paddingVertical: 15, // Add some padding for better touch area
   },
+  selectTextStyle: {
+    fontSize: 16,
+    color: "#333", // Text color for selected item
+  },
+  initValueTextStyle: {
+    fontSize: 16,
+    color: "#888", // Text color for initial value (placeholder)
+  },
+  icon: {
+    marginRight: 10,
+  },
+  // input: {
+  //   flex: 1,
+  //   fontSize: 12,
+  //   color: "black", // Ensure the text color is visible
+  // },
   picker: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 10,
+    overflow: "hidden",
   },
   rowContainer: {
     flexDirection: "row",
@@ -529,38 +745,38 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 
-  closeButton: {
-    marginTop: 10,
-    backgroundColor: "#63c5da",
-    borderRadius: 20,
-    padding: 10,
-    alignItems: "center",
-  },
-  closeButtonText: {
-    color: "white",
-    fontSize: 12,
-  },
+  // closeButton: {
+  //   marginTop: 10,
+  //   backgroundColor: "#63c5da",
+  //   borderRadius: 20,
+  //   padding: 10,
+  //   alignItems: "center",
+  // },
+  // closeButtonText: {
+  //   color: "white",
+  //   fontSize: 12,
+  // },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(0, 0, 0, 0.5)", // Add transparency for background
   },
-  modalContent: {
-    width: 320, // Set the width of the modal content
-    height: 400, // Set the height of the modal content
-    backgroundColor: "white",
-    borderRadius: 10,
-    padding: 20, // Add some padding for spacing
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
+  // modalContent: {
+  //   width: 320, // Set the width of the modal content
+  //   height: 400, // Set the height of the modal content
+  //   backgroundColor: "white",
+  //   borderRadius: 10,
+  //   padding: 20, // Add some padding for spacing
+  //   justifyContent: "center",
+  //   alignItems: "center",
+  // },
+  // modalOverlay: {
+  //   flex: 1,
+  //   justifyContent: "center",
+  //   alignItems: "center",
+  //   backgroundColor: "rgba(0,0,0,0.5)",
+  // },
   modalContent2: {
     backgroundColor: "white",
     padding: 20,

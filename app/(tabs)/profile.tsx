@@ -11,7 +11,6 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
-import ForwordHeadIcon from "@/components/svgIcons/problem/ForwordHeadIcon";
 import { SPRINGPORT8080, TOKEN } from "@/constants/apiConfig";
 import ProblemsListCards from "@/components/problem/ProblemsListCards";
 
@@ -23,6 +22,38 @@ export default function ProfileScreen() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userProblems, setUserProblems] = useState<{ name: string }[]>([]);
+
+  // Define a type for the image map
+  type ProfileImageMap = {
+    profile1: any;
+    profile2: any;
+    profile3: any;
+    profile4: any;
+    profile6: any;
+    profile7: any;
+  };
+
+  // Create the map with the type
+  const profileImageMap: ProfileImageMap = {
+    profile1: require("../../assets/images/avatar/profile.png"),
+    profile2: require("../../assets/images/avatar/profile2pic.jpg"),
+    profile3: require("../../assets/images/avatar/profile3pic.jpg"),
+    profile4: require("../../assets/images/avatar/profile4pic.jpg"),
+    profile6: require("../../assets/images/avatar/profile6pic.jpg"),
+    profile7: require("../../assets/images/avatar/profile7pic.jpg"),
+  };
+
+  // Update the getProfileImage function
+  const getProfileImage = (imageName?: string) => {
+    if (!imageName)
+      return require("../../assets/images/avatar/profile3pic.jpg");
+
+    // Type assertion if you're sure imageName will be a valid key
+    return (
+      profileImageMap[imageName as keyof ProfileImageMap] ||
+      require("../../assets/images/avatar/profile3pic.jpg")
+    );
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -86,8 +117,8 @@ export default function ProfileScreen() {
           ) {
             setUserProblems(problemsData); // Store the entire object
           } else {
-            console.error("Unexpected problems data format:", problemsData);
-            setUserProblems([]); // Default to empty array if format is wrong
+            console.log("No problems returned or unexpected format.");
+            setUserProblems([]);
           }
         } catch (err) {
           console.error("Failed to fetch user problems:", err);
@@ -99,17 +130,6 @@ export default function ProfileScreen() {
 
     fetchUser();
   }, []);
-
-  const profileImages = [
-    require("@/assets/images/profile.png"),
-    require("@/assets/images/profile2pic.jpg"),
-    require("@/assets/images/profile3pic.jpg"),
-    require("@/assets/images/profile4pic.jpg"),
-    require("@/assets/images/profile6pic.jpg"),
-    require("@/assets/images/profile7pic.jpg"),
-  ];
-
-  const [selectedImage, setSelectedImage] = useState(profileImages[0]);
 
   const calculateAge = (dateOfBirth: string) => {
     const birthDate = new Date(dateOfBirth);
@@ -150,7 +170,10 @@ export default function ProfileScreen() {
         </TouchableOpacity>
 
         <View style={styles.profileContainer}>
-          <Image source={selectedImage} style={styles.profileImage} />
+          <Image
+            source={getProfileImage(profile?.profilePictureUri)}
+            style={styles.profileImage}
+          />
           <TouchableOpacity
             style={styles.editIcon}
             onPress={() => router.push("../(profile)/editProfile")}

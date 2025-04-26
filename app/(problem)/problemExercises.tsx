@@ -274,7 +274,10 @@ export default function ProblemExercise() {
             </View>
           </View>
 
-          <View style={styles.PhysiotherapContainer}>
+          <TouchableOpacity
+            style={styles.PhysiotherapContainer}
+            onPress={() => route.push("./(physiotherapist)/physiotherapistsN")}
+          >
             <View style={styles.PhysiotherapContainerIcon}>
               <PhysiotherapistIcon />
               <Text style={styles.PhysiotherapText}>Find Physiotherapist</Text>
@@ -285,7 +288,7 @@ export default function ProblemExercise() {
               color="rgba(12, 167, 189, 0.59)"
               //   style={styles.arrowIcon}
             />
-          </View>
+          </TouchableOpacity>
           {/* Exercises Section */}
           <Text style={styles.sectionTitle}>Exercises list </Text>
           {exercises.length > 0 ? (
