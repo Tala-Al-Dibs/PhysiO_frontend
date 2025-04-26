@@ -198,7 +198,7 @@ export default function ProfileScreen() {
 
       setModalVisible(false);
 
-      router.replace("../(app)/index");
+      router.replace("../(app)");
     } catch (error) {
       console.error("Logout failed:", error);
       Alert.alert(

@@ -12,6 +12,13 @@ import {
   RoundedShoulders,
   Kyphosis,
   Lordosis,
+  AnteriorPelvicTilt,
+  PosteriorPelvicTilt,
+  FlatBack,
+  KneesHyperExtrntion,
+  SwayBack,
+  TightHamestring,
+  WingedScapula,
 } from "../svgIcons/problems/ProblemIconComponent";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -47,21 +54,21 @@ const problemImages = {
 
 const iconMapping = {
   "Bow Legs (Genu Varum)": BowKnees,
-  "Anterior Pelvic Tilt": RoundedShoulders, // Adjust as needed
+  "Anterior Pelvic Tilt": AnteriorPelvicTilt, // Adjust as needed
   "Forward Head Posture": ForwardHead,
-  "Hyperextension of the Knee": KnockKnees, // Adjust as needed
+  "Hyperextension of the Knee": KneesHyperExtrntion, // Adjust as needed
   "Knock Knees": KnockKnees,
   Kyphosis: Kyphosis,
   Lordosis: Lordosis,
-  "Posterior Pelvic Tilt": RoundedShoulders, // Adjust as needed
+  "Posterior Pelvic Tilt": PosteriorPelvicTilt, // Adjust as needed
   "Rounded Shoulders": RoundedShoulders,
   Scoliosis: Scoliosis,
-  "Flat Back (Straight Back)": Kyphosis, // Adjust as needed
-  "Sway Back": Lordosis, // Adjust as needed
-  "Tight Hamstrings": RoundedShoulders, // Adjust as needed
+  "Flat Back (Straight Back)": FlatBack, // Adjust as needed
+  "Sway Back": SwayBack, // Adjust as needed
+  "Tight Hamstrings": TightHamestring, // Adjust as needed
   "Uneven Hips": UnevenHipsRightHigher, // Default to right
   "Uneven Shoulders": UnevenShouldersRightHigher, // Default to right
-  "Winged Scapula": RoundedShoulders, // Adjust as needed
+  "Winged Scapula": WingedScapula, // Adjust as needed
 };
 
 const ProblemItem: React.FC<ProblemItemProps> = ({ item, onPress }) => {

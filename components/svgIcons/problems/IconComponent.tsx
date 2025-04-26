@@ -11,6 +11,8 @@ import {
   RoundedShoulders,
   Kyphosis,
   Lordosis,
+  PosteriorPelvicTilt,
+  AnteriorPelvicTilt,
 } from "./problemsIcons"; // Ensure the correct import path
 
 // Mapping the problems to their corresponding icons
@@ -28,6 +30,8 @@ const iconMapping: Record<string, React.FC> = {
   "Rounded Shoulders": RoundedShoulders,
   "Uneven Shoulders": UnevenShouldersRightHigher,
   "Uneven Hips": UnevenHipsRightHigher,
+  "Posterior Pelvic Tilt": PosteriorPelvicTilt,
+  "Anterior Pelvic Tilt": AnteriorPelvicTilt,
 };
 
 interface IconComponentProps {

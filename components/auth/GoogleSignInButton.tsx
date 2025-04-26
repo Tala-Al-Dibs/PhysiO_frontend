@@ -1,42 +1,21 @@
 import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
-import { useEffect, useState } from "react";
-import { Alert, TouchableOpacity, ActivityIndicator, Text } from "react-native";
+import { useEffect } from "react";
+import { Alert, TouchableOpacity } from "react-native";
 import GoogleLogo from "@/components/svgIcons/signin-signup/GoogleLogo";
 import { getSpringPort } from "@/constants/apiConfig";
 import { storeToken, storeUserId } from "@/constants/auth";
 import { useRouter } from "expo-router";
 import { makeRedirectUri } from "expo-auth-session";
-
 WebBrowser.maybeCompleteAuthSession();
-
-interface GoogleUserInfo {
-  sub: string;
-  name: string;
-  given_name: string;
-  family_name: string;
-  picture: string;
-  email: string;
-  email_verified: boolean;
-  locale: string;
-}
-
-interface BackendAuthResponse {
-  accessToken: string;
-  id: string | number;
-  username: string;
-}
 
 export default function GoogleSignInButton() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-
   const redirectUri = makeRedirectUri({
-    native: "com.yourcompany.yourapp:/redirect", // For standalone iOS/Android
-    path: "redirect",
-  });
+    useProxy: true,
+  } as any);
 
-  console.log("Using Redirect URI:", redirectUri); // Verify this matches Google Cloud!
+  console.log("Generated Redirect URI:", redirectUri);
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     clientId:
@@ -49,18 +28,10 @@ export default function GoogleSignInButton() {
     scopes: ["openid", "profile", "email"],
   });
 
+  console.log(makeRedirectUri());
   useEffect(() => {
     const processResponse = async () => {
-      if (response?.type !== "success") {
-        if (response?.type === "error") {
-          console.error("Google Auth Error:", response.error);
-          Alert.alert(
-            "Authentication Error",
-            response.error?.message || "Failed to authenticate with Google"
-          );
-        }
-        return;
-      }
+      if (response?.type !== "success") return;
 
       const token = response.authentication?.accessToken;
       if (!token) {
@@ -69,13 +40,10 @@ export default function GoogleSignInButton() {
       }
 
       try {
-        setLoading(true);
         await handleGoogleSignIn(token);
       } catch (error) {
         console.error("Google sign-in failed:", error);
         Alert.alert("Error", "Failed to authenticate with Google");
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -94,11 +62,7 @@ export default function GoogleSignInButton() {
         }
       );
 
-      if (!userInfoResponse.ok) {
-        throw new Error("Failed to fetch user info from Google");
-      }
-
-      const userInfo: GoogleUserInfo = await userInfoResponse.json();
+      const userInfo = await userInfoResponse.json();
       const username = userInfo.email.split("@")[0];
 
       // Send to your backend
@@ -109,22 +73,15 @@ export default function GoogleSignInButton() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          username,
-          email: userInfo.email,
-          name: userInfo.name,
-          googleId: userInfo.sub,
-          profilePicture: userInfo.picture,
+          username: username,
         }),
       });
 
       if (!backendResponse.ok) {
-        const errorData = await backendResponse.json().catch(() => ({}));
-        throw new Error(
-          errorData.message || "Google authentication failed on backend"
-        );
+        throw new Error("Google authentication failed");
       }
 
-      const backendData: BackendAuthResponse = await backendResponse.json();
+      const backendData = await backendResponse.json();
 
       // Store the token and user ID
       await Promise.all([
@@ -134,36 +91,19 @@ export default function GoogleSignInButton() {
 
       // Navigate to main app
       router.replace("/(tabs)");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Google sign-in error:", error);
-      Alert.alert(
-        "Authentication Error",
-        error.message || "Failed to sign in with Google"
-      );
-      throw error;
+      Alert.alert("Authentication Error", "Failed to sign in with Google");
     }
   };
 
   return (
     <TouchableOpacity
-      className="flex-row justify-center items-center pt-10"
-      onPress={() => {
-        if (!loading) {
-          promptAsync();
-        }
-      }}
-      disabled={!request || loading}
+      className="flex-row justify-center pt-10"
+      onPress={() => promptAsync()}
+      disabled={!request}
     >
-      {loading ? (
-        <ActivityIndicator size="small" color="#0000ff" />
-      ) : (
-        <>
-          <GoogleLogo />
-          <Text style={{ marginLeft: 8, fontSize: 16, fontWeight: "500" }}>
-            Continue with Google
-          </Text>
-        </>
-      )}
+      <GoogleLogo />
     </TouchableOpacity>
   );
 }
