@@ -4,8 +4,8 @@ import {
   getToken as getStoredToken,
 } from "./auth";
 
-export const SPRINGPORT8080 = "https://6e17-37-76-220-126.ngrok-free.app";
-export const FASTAPIPORT8000 = "https://96fb-37-76-220-126.ngrok-free.app";
+export const SPRINGPORT8080 = "https://d5b0-37-76-220-126.ngrok-free.app";
+export const FASTAPIPORT8000 = "https://9cda-37-76-220-126.ngrok-free.app";
 
 export const getSpringPort = async (): Promise<string> => {
   return (await getApiUrl()) || SPRINGPORT8080;

@@ -3,7 +3,11 @@ import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { Physiotherapist } from "@/components/expolre/types/types";
 import { router } from "expo-router";
-
+import {
+  getSpringPort,
+  getCurrentToken,
+  getCurrentUserId,
+} from "@/constants/apiConfig";
 interface PhysiotherapistItemProps {
   item: Physiotherapist;
   onPress: () => void;
@@ -16,11 +20,14 @@ const PhysiotherapistItem: React.FC<PhysiotherapistItemProps> = ({
   return (
     <TouchableOpacity
       style={styles.physioItem}
-      onPress={() => {
+      onPress={async () => {
         onPress();
         router.push({
           pathname: "/PhysiotherapistDetails",
-          params: { physiotherapistID: item.physiotherapistID.toString() },
+          params: {
+            physiotherapistID: item.physiotherapistID.toString(),
+            token: await getCurrentToken(),
+          },
         });
       }}
     >

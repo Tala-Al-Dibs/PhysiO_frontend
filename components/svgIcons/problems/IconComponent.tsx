@@ -26,7 +26,7 @@ const iconMapping: Record<string, React.FC> = {
   "Uneven Shoulders: Left Shoulder Higher": UnevenShouldersLeftHigher,
   "Bow Knees": BowKnees,
   "Knock Knees": KnockKnees,
-  "Forward Head": ForwardHead,
+  "Forward Head Posture": ForwardHead,
   "Rounded Shoulders": RoundedShoulders,
   "Uneven Shoulders": UnevenShouldersRightHigher,
   "Uneven Hips": UnevenHipsRightHigher,

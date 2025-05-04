@@ -35,7 +35,7 @@ const iconMapping: Record<
   "Uneven Shoulders: Left Shoulder Higher": UnevenShouldersLeftHigher,
   "Bow Knees": BowKnees,
   "Knock Knees": KnockKnees,
-  "Forward Head": ForwardHead,
+  "Forward Head Posture": ForwardHead,
   "Rounded Shoulders": RoundedShoulders,
   "Uneven Shoulders": UnevenShouldersRightHigher, // Default to right if general
   "Uneven Hips": UnevenHipsRightHigher, // Default to right if general

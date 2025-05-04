@@ -9,8 +9,17 @@ import {
   TouchableOpacity,
 } from "react-native";
 import React, { useEffect, useState } from "react";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { SPRINGPORT8080, getCurrentToken, getCurrentUserId } from "@/constants/apiConfig";
+import {
+  FontAwesome6,
+  Ionicons,
+  MaterialIcons,
+  Octicons,
+} from "@expo/vector-icons";
+import {
+  SPRINGPORT8080,
+  getCurrentToken,
+  getCurrentUserId,
+} from "@/constants/apiConfig";
 import IconComponent from "@/components/svgIcons/problems/ProblemsIconsWithColor";
 import {
   PremiumPrize,
@@ -64,7 +73,7 @@ export default function Prizes() {
     initializeAuth();
   }, []);
 
-   useEffect(() => {
+  useEffect(() => {
     const fetchPrizes = async () => {
       if (!bearerToken || !userId) return;
 
@@ -167,11 +176,19 @@ export default function Prizes() {
 
   if (!prizes || prizes.length === 0) {
     return (
-      <View style={[styles.container, styles.center]}>
-        <Ionicons name="trophy-outline" size={48} color="#0CA7BD" />
-        <Text style={styles.emptyText}>
-          No rewards yet. Keep up your exercises!
-        </Text>
+      <View style={styles.container}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <Octicons name="x" size={40} color="#0CA7BD" />
+        </TouchableOpacity>
+        <View style={[styles.container, styles.center]}>
+          <Ionicons name="trophy-outline" size={48} color="#0CA7BD" />
+          <Text style={styles.emptyText}>
+            No rewards yet. Keep up your exercises!
+          </Text>
+        </View>
       </View>
     );
   }

@@ -386,7 +386,10 @@ const explore: React.FC = () => {
         addToLatestSearches(item.clinicName);
         router.push({
           pathname: "/PhysiotherapistDetails",
-          params: { physiotherapistID: item.physiotherapistID.toString() },
+          params: {
+            physiotherapistID: item.physiotherapistID.toString(),
+            token: BEARER_TOKEN, // Pass the current token
+          },
         });
       } else {
         addToLatestSearches(item.name);

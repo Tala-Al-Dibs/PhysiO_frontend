@@ -2,7 +2,11 @@ import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { CountdownCircleTimer } from "react-native-countdown-circle-timer";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { SPRINGPORT8080, getCurrentToken, getCurrentUserId } from "@/constants/apiConfig";
+import {
+  SPRINGPORT8080,
+  getCurrentToken,
+  getCurrentUserId,
+} from "@/constants/apiConfig";
 import { FontAwesome6 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
@@ -76,7 +80,6 @@ const ExerciseSession: React.FC = () => {
     }
     setKey((prevKey) => prevKey + 1); // Reset the timer
   }, [isBreak, currentExerciseIndex, parsedExercises.length, router]);
-
 
   const updateProgress = async () => {
     if (!bearerToken || !progressID) return;

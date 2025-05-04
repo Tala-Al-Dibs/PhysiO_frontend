@@ -9,12 +9,17 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { SPRINGPORT8080, getCurrentToken, getCurrentUserId, FASTAPIPORT8000 } from "@/constants/apiConfig";
+import {
+  SPRINGPORT8080,
+  getCurrentToken,
+  getCurrentUserId,
+  FASTAPIPORT8000,
+} from "@/constants/apiConfig";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { useNavigation } from "@react-navigation/native";
 import { MaterialIcons, Octicons } from "@expo/vector-icons";
 import IconComponent from "@/components/svgIcons/problems/IconComponent";
-import {PhysiotherapistIcon} from "@/components/svgIcons/problems/ProblemDescriptionIcon";
+import { PhysiotherapistIcon } from "@/components/svgIcons/problems/ProblemDescriptionIcon";
 import {
   DurationSumIcon,
   ExerciseNumberIcon,
@@ -62,13 +67,15 @@ export default function ProblemExercise() {
   }, []);
 
   useEffect(() => {
-     const fetchProblemDetails = async () => {
+    const fetchProblemDetails = async () => {
       if (!bearerToken || !problemName) return;
 
       try {
         setLoading(true);
         const response = await fetch(
-          `${SPRINGPORT8080}/api/problems/name/${encodeURIComponent(problemName)}`,
+          `${SPRINGPORT8080}/api/problems/name/${encodeURIComponent(
+            problemName
+          )}`,
           {
             method: "GET",
             headers: {
@@ -79,7 +86,9 @@ export default function ProblemExercise() {
         );
 
         if (!response.ok) {
-          throw new Error(`Failed to fetch problem details: ${response.status}`);
+          throw new Error(
+            `Failed to fetch problem details: ${response.status}`
+          );
         }
 
         const data = await response.json();
@@ -289,7 +298,10 @@ export default function ProblemExercise() {
             </View>
           </View>
 
-          <View style={styles.PhysiotherapContainer}>
+          <TouchableOpacity
+            style={styles.PhysiotherapContainer}
+            onPress={() => route.push("../(physiotherapist)/physiotherapistsN")}
+          >
             <View style={styles.PhysiotherapContainerIcon}>
               <PhysiotherapistIcon />
               <Text style={styles.PhysiotherapText}>Find Physiotherapist</Text>
@@ -300,7 +312,7 @@ export default function ProblemExercise() {
               color="rgba(12, 167, 189, 0.59)"
               //   style={styles.arrowIcon}
             />
-          </View>
+          </TouchableOpacity>
           {/* Exercises Section */}
           <Text style={styles.sectionTitle}>Exercises list </Text>
           {exercises.length > 0 ? (
@@ -352,7 +364,7 @@ export default function ProblemExercise() {
       >
         <Text style={styles.buttonText}>Start Exercise</Text>
       </TouchableOpacity>
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={styles.PhysiotherapContainer}
         onPress={() => route.push("./(physiotherapist)/physiotherapistsN")}
       >
@@ -366,7 +378,7 @@ export default function ProblemExercise() {
           color="rgba(12, 167, 189, 0.59)"
           //   style={styles.arrowIcon}
         />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </View>
   );
 }

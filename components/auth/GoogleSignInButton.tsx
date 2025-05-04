@@ -12,7 +12,8 @@ WebBrowser.maybeCompleteAuthSession();
 export default function GoogleSignInButton() {
   const router = useRouter();
   const redirectUri = makeRedirectUri({
-    useProxy: true,
+    native: "https://auth.expo.io/@Tala.Dibs/cam-app",
+    useProxy: false,
   } as any);
 
   console.log("Generated Redirect URI:", redirectUri);

@@ -14,22 +14,23 @@ import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { useNavigation } from "@react-navigation/native";
 import { MaterialIcons } from "@expo/vector-icons";
 import IconComponent from "@/components/svgIcons/problems/IconComponent";
-import { PhysiotherapistIcon} from "@/components/svgIcons/problems/ProblemDescriptionIcon";
-
+import { PhysiotherapistIcon } from "@/components/svgIcons/problems/ProblemDescriptionIcon";
+import { getCurrentUserId } from "@/constants/apiConfig";
 const API_URL = SPRINGPORT8080 + "/api/problems/name/";
 const API_URL2 = SPRINGPORT8080 + "/api/progresses";
 
 export default function Problem() {
-  const { problem, problemID } = useLocalSearchParams(); 
+  const { problem, problemID } = useLocalSearchParams();
   const problemName = Array.isArray(problem) ? problem[0] : problem;
   const [problemData, setProblemData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  
+
   const [error, setError] = useState<string | null>(null);
   const [progressData, setProgressData] = useState<number>(0);
   const navigation = useNavigation();
   const route = useRouter();
   const [token, setToken] = useState<string>(""); // Added token state
+  const [id, setUserId] = useState<number | null>(null);
 
   React.useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });
@@ -38,21 +39,30 @@ export default function Problem() {
   useEffect(() => {
     const initializeToken = async () => {
       try {
-        const currentToken = await getCurrentToken();
-        if (currentToken) {
-          setToken(currentToken);
+        const id = await getCurrentUserId();
+        const token = await getCurrentToken();
+        if (token) {
+          setToken(token);
         } else {
           setError("Authentication token not available");
+        }
+        if (id) {
+          setUserId(Number(id));
+        } else {
+          setError("User ID not available");
         }
       } catch (err) {
         setError("Failed to initialize authentication");
       }
     };
+
     initializeToken();
   }, []);
 
   useEffect(() => {
     const fetchProblemDetails = async () => {
+      if (!token || !problem) return; // <--- ADD THIS GUARD
+
       try {
         const response = await fetch(
           `${API_URL}${encodeURIComponent(problemName)}`,
@@ -83,13 +93,16 @@ export default function Problem() {
     };
 
     fetchProblemDetails();
-  }, [problem]);
+  }, [token, problem]);
 
   useEffect(() => {
     const fetchProgress = async () => {
+      if (!token || !problemID) {
+        return; // Don't fetch if token or problemID not ready
+      }
       try {
         const response = await fetch(
-          `${API_URL2}/user/1/problem/${problemID}`,
+          `${API_URL2}/user/${id}/problem/${problemID}`,
           {
             method: "GET",
             headers: {
@@ -106,8 +119,7 @@ export default function Problem() {
         }
 
         const data = await response.json();
-      
-        // Check if data is an array before accessing .length
+
         if (Array.isArray(data)) {
           setProgressData(data.length);
         } else {
@@ -119,27 +131,29 @@ export default function Problem() {
         setError("Failed to load progress data");
       }
     };
-  
 
     fetchProgress();
-  }, [problemData]);
+  }, [token, problemID]);
 
   const handleStartExercise = async () => {
     try {
-      const response = await fetch(`${API_URL2}/user/1/problem/${problemID}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          percentage: 0, // Ensure the correct key is used
-        }),
-      });
+      const response = await fetch(
+        `${API_URL2}/user/${id}/problem/${problemID}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            percentage: 0, // Ensure the correct key is used
+          }),
+        }
+      );
 
       if (!response.ok) {
         console.log(
-          `${SPRINGPORT8080}/api/progresses/user/1/problem/${problemID}`
+          `${SPRINGPORT8080}/api/progresses/user/${id}/problem/${problemID}`
         );
         throw new Error(
           `Failed to create progress. Status: ${response.status}`
@@ -326,7 +340,7 @@ export default function Problem() {
 
           <TouchableOpacity
             style={styles.PhysiotherapContainer}
-            onPress={() => route.push("./(physiotherapist)/physiotherapistsN")}
+            onPress={() => route.push("../(physiotherapist)/physiotherapistsN")}
           >
             <View style={styles.PhysiotherapContainerIcon}>
               <PhysiotherapistIcon />

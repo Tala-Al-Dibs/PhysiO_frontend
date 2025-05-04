@@ -24,8 +24,9 @@ const API_URL = SPRINGPORT8080 + "/api";
 const BEARER_TOKEN = getCurrentToken();
 
 export default function PhysiotherapistDetails() {
-  const { physiotherapistID } = useLocalSearchParams<{
+  const { physiotherapistID, token } = useLocalSearchParams<{
     physiotherapistID: string;
+    token: string;
   }>();
   const navigation = useNavigation();
   const [physiotherapist, setPhysiotherapist] =
@@ -40,13 +41,16 @@ export default function PhysiotherapistDetails() {
 
     const fetchPhysiotherapistDetails = async () => {
       try {
+        const currentToken = token || (await getCurrentToken());
+        if (!currentToken) throw new Error("No authentication token available");
+
         const response = await fetch(
           `${API_URL}/physiotherapists/${physiotherapistID}`,
           {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${BEARER_TOKEN}`,
+              Authorization: `Bearer ${currentToken}`,
             },
           }
         );
@@ -62,7 +66,7 @@ export default function PhysiotherapistDetails() {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${BEARER_TOKEN}`,
+              Authorization: `Bearer ${currentToken}`,
             },
           }
         );
